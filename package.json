@@ -1,0 +1,94 @@
+{
+  "name": "nxsocket",
+  "version": "0.2.0",
+  "description": "CLI and WebSocket platform for realtime features",
+  "type": "module",
+  "bin": {
+    "nxsocket": "./dist/cli/index.js"
+  },
+  "main": "./dist/client/index.js",
+  "types": "./dist/client/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "PROTOCOL.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "start": "node dist/cli/index.js",
+    "nxsocket": "tsx src/cli/index.ts",
+    "test": "tsx scripts/test-all.ts",
+    "test:smoke": "tsx scripts/smoke-connect.ts",
+    "test:regenerate": "tsx scripts/smoke-regenerate.ts",
+    "test:fase4": "tsx scripts/smoke-fase4.ts",
+    "test:sqlite": "tsx scripts/smoke-sqlite.ts",
+    "test:fase6": "tsx scripts/smoke-fase6.ts",
+    "test:backlog": "tsx scripts/smoke-backlog.ts",
+    "example:basic": "tsx examples/basic.ts",
+    "example:hello": "tsx examples/hello-chat.ts",
+    "example:demo": "tsx examples/demo-all-modules.ts",
+    "example:fase4": "tsx examples/fase4-mvp.ts",
+    "example:fase6": "tsx examples/fase6.ts",
+    "example:backlog": "tsx examples/backlog.ts",
+    "tunnel": "powershell -NoProfile -File scripts/tunnel-cloudflare.ps1",
+    "tunnel:named": "powershell -NoProfile -File scripts/tunnel-named.ps1",
+    "tunnel:named:setup": "powershell -NoProfile -File scripts/tunnel-named-setup.ps1",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
+    "build:bin": "npm run build && npm run build:bin:win && npm run build:bin:linux",
+    "build:bin:win": "pkg . --targets node22-win-x64 --output release/nxsocket-win-x64.exe",
+    "build:bin:linux": "pkg . --targets node22-linux-x64 --output release/nxsocket-linux-x64",
+    "livekit:dev": "powershell -NoProfile -File scripts/livekit-dev.ps1",
+    "livekit:bin": "powershell -NoProfile -File scripts/livekit-dev.ps1"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "pkg": {
+    "targets": [
+      "node22-win-x64",
+      "node22-linux-x64"
+    ],
+    "outputPath": "release"
+  },
+  "keywords": [
+    "websocket",
+    "realtime",
+    "cli",
+    "nxsocket"
+  ],
+  "license": "MIT",
+  "optionalDependencies": {
+    "firebase-admin": "^13.2.0"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "livekit-server-sdk": "^2.19.0",
+    "qrcode-terminal": "^0.12.0",
+    "selfsigned": "^5.5.0",
+    "web-push": "^3.6.7",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/qrcode-terminal": "^0.12.2",
+    "@types/selfsigned": "^2.0.4",
+    "@types/web-push": "^3.6.4",
+    "@types/ws": "^8.18.0",
+    "@yao-pkg/pkg": "^6.23.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

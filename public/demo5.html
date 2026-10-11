@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — Remote AI Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0c10;
+      --panel: #12161e;
+      --line: #2a3344;
+      --text: #d7e0ef;
+      --muted: #7d8aa3;
+      --ok: #3ecf8e;
+      --warn: #d4a017;
+      --err: #e85d5d;
+      --accent: #5b9fd4;
+      --claude: #d4a574;
+      --cursor: #7eb8e8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Syne", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 70% 45% at 80% 0%, #1a2740 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 10% 100%, #142018 0%, transparent 50%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 460px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.15rem;
+      min-height: 600px;
+      max-height: min(94vh, 820px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.65rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 {
+      margin: 0 0 0.15rem;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+      text-align: center;
+    }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 0 0 0.75rem;
+      min-height: 1.15em;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .sub.live { color: var(--ok); }
+    .sub.warn { color: var(--warn); }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.4rem 0 0.2rem; }
+    input, textarea {
+      width: 100%;
+      background: #0b0e14;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.6rem 0.7rem;
+      font: 500 0.88rem "IBM Plex Mono", monospace;
+      outline: none;
+    }
+    textarea { min-height: 88px; resize: vertical; font-family: "IBM Plex Mono", monospace; }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    .hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; margin: 0.4rem 0 0; }
+    .actions { display: flex; gap: 0.45rem; justify-content: center; flex-wrap: wrap; margin-top: 0.55rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.6rem 0.95rem;
+      font: 650 0.88rem "Syne", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-go { background: var(--ok); color: #062214; }
+    .btn-stop { background: var(--err); color: #fff; }
+    .btn-claude { background: var(--claude); color: #1a1208; }
+    .btn-cursor { background: var(--cursor); color: #0a1520; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .tools {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 0.35rem 0 0.5rem;
+      font: 500 0.7rem "IBM Plex Mono", monospace;
+      color: var(--muted);
+    }
+    .tools span.on { color: var(--ok); }
+    .tools span.off { color: var(--err); }
+    .screen {
+      flex: 1;
+      min-height: 180px;
+      background: #07090d;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.7rem;
+      overflow-y: auto;
+      font: 400 0.76rem/1.45 "IBM Plex Mono", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .screen .cmd { color: var(--ok); }
+    .screen .stderr { color: var(--err); }
+    .screen .meta { color: var(--muted); }
+    #viewApp { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo4">← AI stream</a>
+      <span id="netLabel">Offline</span>
+      <a href="./demo6">Track →</a>
+    </div>
+    <h1>Remote AI Control</h1>
+    <p class="sub" id="modeLabel">Kontrol agen di PC — tanpa buka terminal</p>
+
+    <div id="viewSetup">
+      <label for="token">Gateway token</label>
+      <input id="token" autocomplete="off" placeholder="Tempel token dari banner server" />
+      <label for="name">Nama</label>
+      <input id="name" value="HP" maxlength="24" />
+      <p class="hint">
+        Dari HP di Wi‑Fi yang sama, buka URL ini. Set folder kerja lalu kirim prompt ke
+        <b>Claude</b> atau <b>Cursor Agent</b> di PC server.
+      </p>
+      <div class="actions">
+        <button class="btn-go" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div id="viewApp" class="hidden">
+      <label for="cwd">Folder kerja (cwd)</label>
+      <input id="cwd" placeholder="D:\Framework\CLI\NxSocket" />
+      <div class="tools" id="toolFlags">
+        <span id="flagClaude" class="off">claude ✗</span>
+        <span id="flagCursor" class="off">cursor ✗</span>
+      </div>
+      <label for="prompt">Instruksi ke agen</label>
+      <textarea id="prompt" placeholder="Contoh: ringkas isi README.md di folder ini"></textarea>
+      <div class="actions">
+        <button class="btn-ghost" id="btnInfo" type="button">Info folder</button>
+        <button class="btn-claude" id="btnClaude" type="button">Claude</button>
+        <button class="btn-cursor" id="btnCursor" type="button">Cursor Agent</button>
+        <button class="btn-stop hidden" id="btnStop" type="button">Stop</button>
+      </div>
+      <div class="screen" id="screen" aria-live="polite"></div>
+      <div class="actions">
+        <button class="btn-ghost" id="btnClear" type="button">Clear</button>
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo5\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let execId = null;
+    let running = false;
+    let tools = { claude: false, cursor: false };
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      $("viewApp").classList.toggle("hidden", on);
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMode(text, kind) {
+      $("modeLabel").textContent = text;
+      $("modeLabel").className = "sub " + (kind || "");
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function append(html) {
+      const screen = $("screen");
+      screen.insertAdjacentHTML("beforeend", html);
+      screen.scrollTop = screen.scrollHeight;
+    }
+
+    function setRunning(on) {
+      running = on;
+      $("btnClaude").disabled = on || !tools.claude;
+      $("btnCursor").disabled = on || !tools.cursor;
+      $("btnInfo").disabled = on;
+      $("btnStop").classList.toggle("hidden", !on);
+      $("prompt").disabled = on;
+      $("cwd").disabled = on;
+    }
+
+    function runTool(tool) {
+      if (running) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("Belum Online");
+        return;
+      }
+      const cwd = $("cwd").value.trim();
+      const prompt = $("prompt").value.trim();
+      if (tool !== "info" && !prompt) {
+        alert("Tulis instruksi dulu");
+        return;
+      }
+      execId = crypto.randomUUID();
+      setRunning(true);
+      setMode("Menjalankan " + tool + "…", "live");
+      append(`<div class="cmd">▶ ${escapeHtml(tool)}${cwd ? " @ " + escapeHtml(cwd) : ""}${prompt ? "\n  " + escapeHtml(prompt.slice(0, 200)) : ""}</div>`);
+      send({
+        type: "agent.run",
+        tool,
+        prompt: tool === "info" ? undefined : prompt,
+        cwd: cwd || undefined,
+        execId,
+      });
+    }
+
+    function cancelRun() {
+      if (execId) send({ type: "agent.cancel", execId });
+      setRunning(false);
+      setMode("Dibatalkan", "warn");
+      append(`<div class="meta">(cancelled)</div>`);
+      execId = null;
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) { alert("Tempel token dulu"); return; }
+      const name = $("name").value.trim() || "HP";
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      ws.onopen = () => { $("netLabel").textContent = "Online"; };
+      ws.onclose = () => {
+        $("netLabel").textContent = "Offline";
+        setRunning(false);
+        showSetup(true);
+      };
+      ws.onerror = () => alert("Gagal terhubung ke server");
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          send({ type: "identify", name });
+          showSetup(false);
+          $("screen").innerHTML = "";
+          append(`<div class="meta"># session ${escapeHtml(msg.sessionId)}\n# panel kontrol agen — bukan shell bebas\n</div>`);
+        } else if (msg.type === "agent.status") {
+          tools = msg.tools || {};
+          $("cwd").value = msg.cwd || "";
+          $("flagClaude").textContent = tools.claude ? "claude ✓" : "claude ✗";
+          $("flagClaude").className = tools.claude ? "on" : "off";
+          $("flagCursor").textContent = tools.cursor ? "cursor ✓" : "cursor ✗";
+          $("flagCursor").className = tools.cursor ? "on" : "off";
+          $("btnClaude").disabled = !tools.claude;
+          $("btnCursor").disabled = !tools.cursor;
+          append(`<div class="meta"># roots: ${(msg.roots || []).map(escapeHtml).join(" | ") || "-"}\n</div>`);
+          setMode("Siap — pilih Claude atau Cursor Agent", "live");
+        } else if (msg.type === "terminal.started") {
+          if (execId && msg.execId !== execId) return;
+        } else if (msg.type === "terminal.output") {
+          if (execId && msg.execId !== execId) return;
+          const cls = msg.stream === "stderr" ? "stderr" : "";
+          append(`<span class="${cls}">${escapeHtml(msg.chunk || "")}</span>`);
+        } else if (msg.type === "terminal.exit") {
+          if (execId && msg.execId !== execId) return;
+          append(`<div class="meta">(exit ${msg.code ?? "?"})</div>\n`);
+          setRunning(false);
+          execId = null;
+          setMode(msg.code === 0 ? "Selesai OK" : "Selesai (exit " + msg.code + ")", msg.code === 0 ? "live" : "warn");
+        } else if (msg.type === "error") {
+          append(`<div class="stderr">! ${escapeHtml(msg.message || msg.code || "error")}</div>`);
+          setRunning(false);
+          execId = null;
+          setMode("Error", "warn");
+        }
+      };
+    };
+
+    $("btnInfo").onclick = () => runTool("info");
+    $("btnClaude").onclick = () => runTool("claude");
+    $("btnCursor").onclick = () => runTool("cursor");
+    $("btnStop").onclick = () => cancelRun();
+    $("btnClear").onclick = () => { $("screen").innerHTML = ""; };
+    $("btnLogout").onclick = () => {
+      if (running) cancelRun();
+      ws?.close();
+      showSetup(true);
+    };
+
+    const q = new URLSearchParams(location.search);
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("cwd")) $("cwd").value = q.get("cwd");
+  </script>
+</body>
+</html>

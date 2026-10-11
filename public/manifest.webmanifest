@@ -1,0 +1,19 @@
+{
+  "name": "NxSocket Call",
+  "short_name": "NxSocket",
+  "description": "Chat, telepon, dan video call realtime via NxSocket",
+  "start_url": "./demo2",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1512",
+  "theme_color": "#2fbf71",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "./icons/nxsocket.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

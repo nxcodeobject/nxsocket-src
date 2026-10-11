@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="theme-color" content="#1a1f2e" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/nxsocket.svg" type="image/svg+xml" />
+  <title>NxSocket — SFU Meeting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12161f; --panel: #1a2030; --line: #2a3348;
+      --text: #eef2f8; --muted: #8b97ad; --accent: #3d8bfd;
+      --green: #2fbf71; --red: #e25555; --amber: #e0a35a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(ellipse 70% 40% at 50% 0%, #1e2a44 0%, transparent 55%), var(--bg);
+    }
+    .shell { max-width: 1100px; margin: 0 auto; min-height: 100vh; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; color: var(--muted); font-size: 0.8rem; }
+    .bar a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0; font-size: 1.15rem; }
+    .badge { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 999px; background: #243049; color: var(--green); margin-left: 0.35rem; }
+    .badge.off { color: var(--amber); }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1rem; }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.75rem; color: var(--muted); margin: 0.45rem 0 0.2rem; }
+    input { width: 100%; max-width: 420px; background: #12161f; border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 0.6rem 0.75rem; font: inherit; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    button { font: inherit; font-weight: 700; border: none; cursor: pointer; border-radius: 999px; padding: 0.65rem 1rem; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-main { background: var(--accent); color: #fff; }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .hint { color: var(--muted); font-size: 0.8rem; line-height: 1.45; }
+    .stage { flex: 1; min-height: 420px; background: #0d1118; border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+    .grid { flex: 1; display: grid; gap: 6px; padding: 6px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); grid-auto-rows: minmax(140px, 1fr); }
+    .tile { position: relative; background: #151a24; border-radius: 12px; overflow: hidden; min-height: 140px; }
+    .tile video { width: 100%; height: 100%; object-fit: cover; background: #0d1118; display: block; }
+    .tile audio { display: none !important; }
+    .tile .tag { position: absolute; left: 8px; bottom: 8px; font-size: 0.72rem; background: rgba(0,0,0,0.55); padding: 0.2rem 0.45rem; border-radius: 6px; z-index: 2; }
+    #audioSink { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .dock { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.45rem; padding: 0.65rem; border-top: 1px solid var(--line); background: #12161f; }
+    pre.setup { background: #0d1118; border: 1px solid var(--line); border-radius: 10px; padding: 0.75rem; overflow: auto; font-size: 0.72rem; color: #c8d4e8; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="bar">
+      <div><a href="./demo9">Meeting mesh</a> · <a href="./demo8">Group video</a></div>
+      <span id="netLabel">Offline</span>
+    </div>
+    <h1>SFU Meeting <span class="badge off" id="sfuBadge">LiveKit OFF</span></h1>
+
+    <div class="panel" id="viewSetup">
+      <p class="hint">Media lewat <b>LiveKit SFU</b> (bukan mesh). Cocok puluhan peserta. NxSocket hanya gateway + token.</p>
+      <div id="setupHelp" class="hidden">
+        <p class="hint" style="color:var(--amber)">LiveKit belum aktif di server. Ikuti singkat:</p>
+        <pre class="setup">docker run --rm -p 7880:7880 -p 7881:7881 -p 7882:7882/udp `
+  -e LIVEKIT_KEYS="devkey: secret" `
+  livekit/livekit-server --dev --bind 0.0.0.0
+
+# .env NxSocket:
+NXSOCKET_LIVEKIT_URL=ws://127.0.0.1:7880
+NXSOCKET_LIVEKIT_API_KEY=devkey
+NXSOCKET_LIVEKIT_API_SECRET=secret
+
+npm run build &amp;&amp; nxsocket server --https
+# Docs: /docs/sfu-livekit.md</pre>
+      </div>
+      <p class="hint" id="secureWarn" style="color:var(--amber);display:none;">Pakai HTTPS untuk mic/kamera di HP.</p>
+      <label for="token">Token NxSocket</label>
+      <input id="token" />
+      <label for="name">Nama</label>
+      <input id="name" value="Aku" />
+      <label for="room">Room</label>
+      <input id="room" value="sfu-meet-1" />
+      <div class="actions">
+        <button class="btn-main" id="btnJoin" type="button" disabled>Masuk SFU</button>
+        <button class="btn-ghost" id="btnInvite" type="button">Salin undangan</button>
+      </div>
+      <p class="hint" id="statusHint"></p>
+    </div>
+
+    <div class="stage hidden" id="viewMeet">
+      <div class="grid" id="videoGrid"></div>
+      <div id="audioSink" aria-hidden="true"></div>
+      <div class="dock">
+        <button class="btn-ghost" id="btnMute" type="button">Mute</button>
+        <button class="btn-ghost" id="btnCam" type="button">Cam off</button>
+        <button class="btn-ghost" id="btnScreen" type="button">Share</button>
+        <button class="btn-danger" id="btnLeave" type="button">Leave</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      Room,
+      RoomEvent,
+      Track,
+      createLocalTracks,
+      createLocalScreenTracks,
+    } from "https://cdn.jsdelivr.net/npm/livekit-client@2.9.9/+esm";
+
+    if (location.protocol === "http:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      location.replace("https://" + location.host + location.pathname + location.search + location.hash);
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo10\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let sessionId = null;
+    let sfuEnabled = false;
+    let room = null;
+    let localAudio = null;
+    let localVideo = null;
+    let screenPub = null;
+    let micMuted = false;
+    let camOff = false;
+
+    function roomName() { return $("room").value.trim() || "sfu-meet-1"; }
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+    function setStatus(t) { $("statusHint").textContent = t || ""; }
+
+    /** Satu tile kamera per peserta; audio tidak bikin tile; screen share tile terpisah. */
+    function attachTrack(track, identity, name) {
+      if (track.kind === Track.Kind.Audio) {
+        const el = track.attach();
+        el.autoplay = true;
+        el.playsInline = true;
+        $("audioSink").appendChild(el);
+        void el.play().catch(() => {});
+        return;
+      }
+      if (track.kind !== Track.Kind.Video) return;
+
+      const isScreen = track.source === Track.Source.ScreenShare;
+      const tileId = isScreen ? ("tile-" + identity + "-screen") : ("tile-" + identity);
+      let tile = document.getElementById(tileId);
+      if (!tile) {
+        tile = document.createElement("div");
+        tile.className = "tile";
+        tile.id = tileId;
+        tile.dataset.identity = identity;
+        tile.dataset.kind = isScreen ? "screen" : "camera";
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = (name || identity) + (isScreen ? " · share" : "");
+        tile.appendChild(tag);
+        $("videoGrid").appendChild(tile);
+      } else {
+        const tag = tile.querySelector(".tag");
+        if (tag) tag.textContent = (name || identity) + (isScreen ? " · share" : "");
+        // Ganti video lama di tile yang sama (hindari 2 kamera)
+        for (const old of [...tile.querySelectorAll("video")]) old.remove();
+      }
+      const el = track.attach();
+      el.autoplay = true;
+      el.playsInline = true;
+      el.muted = identity === "local";
+      el.style.width = "100%";
+      el.style.height = "100%";
+      el.style.objectFit = "cover";
+      tile.insertBefore(el, tile.firstChild);
+      void el.play().catch(() => {});
+    }
+
+    function detachTrack(track) {
+      track.detach().forEach((el) => el.remove());
+      for (const tile of [...$("videoGrid").querySelectorAll(".tile")]) {
+        if (!tile.querySelector("video")) tile.remove();
+      }
+    }
+
+    async function connectLiveKit(url, token) {
+      if (room) {
+        await room.disconnect();
+        room = null;
+      }
+      $("videoGrid").innerHTML = "";
+      $("audioSink").innerHTML = "";
+      room = new Room({ adaptiveStream: true, dynacast: true });
+      room
+        .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          // Abaikan track lokal yang kadang ikut event (cegah dobel "Kamu"/diri sendiri)
+          if (participant.identity === room.localParticipant.identity) return;
+          attachTrack(track, participant.identity, participant.name || participant.identity);
+        })
+        .on(RoomEvent.TrackUnsubscribed, (track) => detachTrack(track))
+        .on(RoomEvent.TrackMuted, (_pub, participant) => {
+          /* optional UI */
+          void participant;
+        })
+        .on(RoomEvent.ParticipantDisconnected, (p) => {
+          document.getElementById("tile-" + p.identity)?.remove();
+          document.getElementById("tile-" + p.identity + "-screen")?.remove();
+        })
+        .on(RoomEvent.Disconnected, () => {
+          setStatus("Terputus dari LiveKit");
+          $("viewMeet").classList.add("hidden");
+          $("viewSetup").classList.remove("hidden");
+        });
+
+      await room.connect(url, token);
+      const tracks = await createLocalTracks({
+        audio: true,
+        video: {
+          facingMode: "user",
+          resolution: { width: 640, height: 480, frameRate: 24 },
+        },
+      });
+      for (const t of tracks) {
+        await room.localParticipant.publishTrack(t, {
+          source: t.kind === Track.Kind.Video ? Track.Source.Camera : Track.Source.Microphone,
+        });
+        if (t.kind === Track.Kind.Audio) localAudio = t;
+        if (t.kind === Track.Kind.Video) {
+          localVideo = t;
+          attachTrack(t, "local", "Kamu");
+        }
+      }
+      $("viewSetup").classList.add("hidden");
+      $("viewMeet").classList.remove("hidden");
+      setStatus("Di SFU room: " + roomName());
+    }
+
+    function applySfuStatus(msg) {
+      sfuEnabled = Boolean(msg.enabled);
+      const badge = $("sfuBadge");
+      badge.textContent = sfuEnabled ? "LiveKit ON" : "LiveKit OFF";
+      badge.classList.toggle("off", !sfuEnabled);
+      $("btnJoin").disabled = !sfuEnabled;
+      $("setupHelp").classList.toggle("hidden", sfuEnabled);
+      setStatus(sfuEnabled ? ("SFU: " + (msg.url || "ready")) : "Konfigurasi LiveKit dulu");
+    }
+
+    function connectWs() {
+      const token = $("token").value.trim();
+      if (!token) {
+        alert("Tempel token NxSocket");
+        return;
+      }
+      if (ws) try { ws.close(); } catch { /* */ }
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      $("netLabel").textContent = "…";
+      ws.onopen = () => { $("netLabel").textContent = "Online"; };
+      ws.onclose = () => { $("netLabel").textContent = "Offline"; };
+      ws.onmessage = async (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          sessionId = msg.sessionId;
+          send({ type: "identify", name: $("name").value.trim() || "Aku" });
+        } else if (msg.type === "sfu.status") {
+          applySfuStatus(msg);
+        } else if (msg.type === "sfu.token") {
+          try {
+            await connectLiveKit(msg.url, msg.token);
+          } catch (e) {
+            console.error(e);
+            alert(e.message || "Gagal connect LiveKit");
+            setStatus(e.message || "LiveKit connect gagal");
+          }
+        } else if (msg.type === "error") {
+          setStatus(msg.message || "Error");
+          if (msg.code === "sfu_unavailable") $("setupHelp").classList.remove("hidden");
+        }
+      };
+    }
+
+    $("btnJoin").onclick = () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        connectWs();
+        setTimeout(() => {
+          if (!sfuEnabled) return;
+          send({ type: "sfu.createToken", room: roomName(), name: $("name").value.trim() || "Aku" });
+        }, 500);
+        return;
+      }
+      if (!sfuEnabled) {
+        alert("LiveKit OFF di server");
+        return;
+      }
+      send({ type: "sfu.createToken", room: roomName(), name: $("name").value.trim() || "Aku" });
+    };
+
+    $("btnLeave").onclick = async () => {
+      if (room) await room.disconnect();
+      room = null;
+      $("videoGrid").innerHTML = "";
+      $("audioSink").innerHTML = "";
+      $("viewMeet").classList.add("hidden");
+      $("viewSetup").classList.remove("hidden");
+    };
+
+    $("btnMute").onclick = async () => {
+      micMuted = !micMuted;
+      if (localAudio) await localAudio.mute(micMuted);
+      else if (room) await room.localParticipant.setMicrophoneEnabled(!micMuted);
+      $("btnMute").textContent = micMuted ? "Unmute" : "Mute";
+    };
+
+    $("btnCam").onclick = async () => {
+      camOff = !camOff;
+      if (localVideo) await localVideo.mute(camOff);
+      else if (room) await room.localParticipant.setCameraEnabled(!camOff);
+      $("btnCam").textContent = camOff ? "Cam on" : "Cam off";
+    };
+
+    $("btnScreen").onclick = async () => {
+      if (!room) return;
+      if (screenPub) {
+        await room.localParticipant.unpublishTrack(screenPub.track);
+        screenPub.track.stop();
+        screenPub = null;
+        $("btnScreen").textContent = "Share";
+        return;
+      }
+      try {
+        const tracks = await createLocalScreenTracks({ audio: false });
+        const track = tracks[0];
+        screenPub = await room.localParticipant.publishTrack(track);
+        $("btnScreen").textContent = "Stop share";
+        track.mediaStreamTrack.onended = () => $("btnScreen").click();
+      } catch (e) {
+        setStatus(e.message || "Share gagal");
+      }
+    };
+
+    $("btnInvite").onclick = async () => {
+      const u = new URL(location.href);
+      u.searchParams.set("token", $("token").value.trim());
+      u.searchParams.set("name", "Guest");
+      u.searchParams.set("room", roomName());
+      try {
+        await navigator.clipboard.writeText(u.toString());
+        setStatus("Undangan disalin");
+      } catch {
+        prompt("Salin:", u.toString());
+      }
+    };
+
+    const q = new URLSearchParams(location.search);
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("room")) $("room").value = q.get("room");
+    if (!window.isSecureContext || location.protocol === "http:") {
+      $("secureWarn").style.display = "block";
+    }
+
+    // Auto-connect WS jika token sudah ada (untuk cek sfu.status)
+    if ($("token").value.trim()) connectWs();
+  </script>
+</body>
+</html>

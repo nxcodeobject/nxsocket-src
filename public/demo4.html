@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — AI Stream</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1512;
+      --card: #16211c;
+      --line: #2a3b33;
+      --text: #eef6f1;
+      --muted: #8aa396;
+      --green: #2fbf71;
+      --green-dark: #1f8a50;
+      --amber: #e0a35a;
+      --red: #e25555;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, #1c3d30 0%, transparent 60%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 420px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.25rem 1.2rem 1.2rem;
+      min-height: 560px;
+      max-height: min(92vh, 720px);
+      display: flex;
+      flex-direction: column;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    .mode {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin: 0 0 0.85rem;
+      min-height: 1.2em;
+    }
+    .mode.live { color: var(--green); }
+    .mode.demo { color: var(--amber); }
+    .hidden { display: none !important; }
+    .setup { width: 100%; text-align: left; flex: 1; }
+    label { display: block; font-size: 0.75rem; color: var(--muted); margin: 0.45rem 0 0.2rem; }
+    input, textarea {
+      width: 100%;
+      background: #101a16;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--green-dark); }
+    textarea { min-height: 72px; resize: vertical; }
+    .hint { color: var(--muted); font-size: 0.8rem; line-height: 1.45; margin: 0.4rem 0 0; }
+    .hint code {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78em;
+      background: #101a16;
+      padding: 0.1em 0.35em;
+      border-radius: 6px;
+    }
+    .actions {
+      display: flex;
+      gap: 0.55rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 0.7rem;
+    }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.7rem 1.15rem;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-call { background: var(--green); color: #062214; }
+    .btn-hang { background: var(--red); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding: 0.2rem 0.1rem 0.6rem;
+      min-height: 220px;
+    }
+    .bubble {
+      max-width: 92%;
+      padding: 0.65rem 0.8rem;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      background: #20352c;
+      border: 1px solid var(--line);
+    }
+    .bubble.ai {
+      align-self: flex-start;
+      background: #101a16;
+      border: 1px solid var(--line);
+    }
+    .bubble.ai .meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    .bubble.ai.streaming::after {
+      content: "▍";
+      animation: blink 1s step-end infinite;
+      color: var(--green);
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    .composer {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+      border-top: 1px solid var(--line);
+      padding-top: 0.75rem;
+    }
+    .composer textarea { flex: 1; min-height: 44px; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <span>
+        <a href="./demo">Chat</a> ·
+        <a href="./demo2">Suara</a> ·
+        <a href="./demo3">Video</a>
+      </span>
+      <span id="netLabel">Offline</span>
+    </div>
+    <h1>AI Stream</h1>
+    <p class="mode demo" id="modeLabel">Mode: …</p>
+
+    <div class="setup" id="viewSetup">
+      <p class="hint" style="margin-top:0;">
+        Streaming AI lewat WebSocket (<code>ai.chunk</code> → <code>ai.done</code>).<br />
+        Tanpa API key di server = <b>demo</b> (pecah kata). Dengan
+        <code>NXSOCKET_AI_API_KEY</code> = provider OpenAI-compatible.
+      </p>
+      <p class="hint">Alamat: <code id="lanHint">https://IP:7080/v1/demo4</code></p>
+      <label for="token">Token gateway</label>
+      <input id="token" placeholder="Dari: nxsocket gateway info" />
+      <label for="name">Nama kamu</label>
+      <input id="name" value="Aku" />
+      <div class="actions">
+        <button class="btn-call" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div class="hidden" id="viewChat" style="flex:1;flex-direction:column;min-height:0;">
+      <div class="chat" id="chat"></div>
+      <div class="composer">
+        <textarea id="prompt" placeholder="Tulis prompt…" rows="2"></textarea>
+        <button class="btn-call" id="btnSend" type="button">Kirim</button>
+        <button class="btn-hang hidden" id="btnCancel" type="button">Stop</button>
+      </div>
+      <div class="actions" style="margin-top:0.55rem;">
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo4\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let sessionId = null;
+    let streamId = null;
+    let streaming = false;
+    let aiBubble = null;
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      const chat = $("viewChat");
+      chat.classList.toggle("hidden", on);
+      chat.style.display = on ? "none" : "flex";
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMode(text, kind) {
+      const el = $("modeLabel");
+      el.textContent = text;
+      el.className = "mode " + (kind || "demo");
+    }
+
+    function addBubble(role, text) {
+      const div = document.createElement("div");
+      div.className = "bubble " + role;
+      if (role === "ai") {
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = "AI";
+        div.appendChild(meta);
+        const body = document.createElement("span");
+        body.className = "body";
+        body.textContent = text || "";
+        div.appendChild(body);
+      } else {
+        div.textContent = text;
+      }
+      $("chat").appendChild(div);
+      $("chat").scrollTop = $("chat").scrollHeight;
+      return div;
+    }
+
+    function setStreamingUi(on) {
+      streaming = on;
+      $("btnSend").classList.toggle("hidden", on);
+      $("btnCancel").classList.toggle("hidden", !on);
+      $("prompt").disabled = on;
+      if (aiBubble) aiBubble.classList.toggle("streaming", on);
+    }
+
+    function startStream() {
+      const prompt = $("prompt").value.trim();
+      if (!prompt) {
+        alert("Tulis prompt dulu");
+        return;
+      }
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("Belum Online");
+        return;
+      }
+      if (streaming) return;
+
+      addBubble("user", prompt);
+      $("prompt").value = "";
+      aiBubble = addBubble("ai", "");
+      streamId = crypto.randomUUID();
+      setStreamingUi(true);
+      send({ type: "ai.start", prompt, streamId });
+    }
+
+    function cancelStream() {
+      if (streamId) send({ type: "ai.cancel", streamId });
+      setStreamingUi(false);
+      streamId = null;
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) {
+        alert("Tempel token dulu");
+        return;
+      }
+      const name = $("name").value.trim() || "Aku";
+      const wsUrl = `${toWs(hostBase)}?token=${encodeURIComponent(token)}`;
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        $("netLabel").textContent = "Online";
+      };
+      ws.onclose = () => {
+        $("netLabel").textContent = "Offline";
+        setStreamingUi(false);
+        showSetup(true);
+      };
+      ws.onerror = () => alert("Gagal terhubung ke server");
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          sessionId = msg.sessionId;
+          send({ type: "identify", name });
+          showSetup(false);
+          $("chat").innerHTML = "";
+          addBubble("ai", "Menghubungkan…");
+        } else if (msg.type === "ai.status") {
+          $("chat").innerHTML = "";
+          if (msg.mode === "provider") {
+            setMode("Mode: provider (" + (msg.model || "?") + ")", "live");
+            addBubble(
+              "ai",
+              "Siap. Ketik prompt lalu Kirim.\n\n" +
+                "Provider: " + (msg.url || "") + "\n" +
+                "Model: " + (msg.model || "") + " (" + (msg.keys || 0) + " key, rotasi otomatis seperti nxcode)\n\n" +
+                "Token habis (401/402/429) → ganti key berikutnya dari settings.json.",
+            );
+          } else {
+            setMode("Mode: demo (pecah kata)", "demo");
+            addBubble(
+              "ai",
+              "Siap. Ketik prompt lalu Kirim.\n\n" +
+                "Server tanpa API key → demo pecah kata.\n" +
+                "Set NXSOCKET_AI_API_KEY / NXSOCKET_AI_API_KEYS di .env untuk provider.",
+            );
+          }
+        } else if (msg.type === "ai.chunk") {
+          if (streamId && msg.streamId !== streamId) return;
+          if (!aiBubble) aiBubble = addBubble("ai", "");
+          const body = aiBubble.querySelector(".body") || aiBubble;
+          body.textContent = (body.textContent || "") + (msg.text || "");
+          $("chat").scrollTop = $("chat").scrollHeight;
+          if (msg.index === 0) {
+            // Heuristik: chunk pertama panjang utuh sering dari demo word-split singkat
+            setMode("Mode: streaming…", "live");
+          }
+        } else if (msg.type === "ai.done") {
+          if (streamId && msg.streamId !== streamId) return;
+          setStreamingUi(false);
+          streamId = null;
+          setMode(
+            msg.reason === "cancelled" ? "Mode: dibatalkan" : "Mode: selesai (chunk bertahap OK)",
+            msg.reason === "cancelled" ? "demo" : "live",
+          );
+        } else if (msg.type === "error") {
+          alert(msg.message || msg.code);
+          setStreamingUi(false);
+          if (msg.code === "ai_error") {
+            setMode("Mode: error provider — cek API key di server", "demo");
+          }
+        }
+      };
+    };
+
+    $("btnSend").onclick = () => startStream();
+    $("btnCancel").onclick = () => cancelStream();
+    $("btnLogout").onclick = () => {
+      cancelStream();
+      ws?.close();
+      showSetup(true);
+    };
+    $("prompt").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        startStream();
+      }
+    });
+
+    const q = new URLSearchParams(location.search);
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    $("lanHint").textContent = `${location.origin}${location.pathname.replace(/\/?$/, "")}`;
+  </script>
+</body>
+</html>

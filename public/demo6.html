@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — Tracking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1210;
+      --panel: #13201b;
+      --line: #2a4036;
+      --text: #e8f2ec;
+      --muted: #8aa396;
+      --teal: #2ec4a0;
+      --teal-dim: #1a7a62;
+      --amber: #e0a35a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 75% 50% at 50% -15%, #1a3d32 0%, transparent 55%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 440px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.15rem;
+      min-height: 580px;
+      max-height: min(94vh, 760px);
+      display: flex;
+      flex-direction: column;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.65rem;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0 0 0.2rem; font-size: 1.35rem; text-align: center; letter-spacing: -0.02em; }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 0 0 0.75rem;
+      min-height: 1.15em;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .sub.live { color: var(--teal); }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.4rem 0 0.2rem; }
+    input {
+      width: 100%;
+      background: #0c1612;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.6rem 0.7rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--teal-dim); }
+    .hint { color: var(--muted); font-size: 0.78rem; line-height: 1.4; margin: 0.4rem 0 0; }
+    .actions { display: flex; gap: 0.45rem; justify-content: center; flex-wrap: wrap; margin-top: 0.65rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.6rem 1rem;
+      font: 650 0.9rem "DM Sans", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .btn-go { background: var(--teal); color: #062218; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .btn-amber { background: var(--amber); color: #2a1a05; }
+    #viewApp { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 0.55rem; }
+    .row { display: flex; gap: 0.45rem; }
+    .row input { flex: 1; font-family: "JetBrains Mono", monospace; font-size: 0.82rem; }
+    .map-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 260px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #0a1411;
+      touch-action: none;
+    }
+    canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+    .coords {
+      font: 500 0.72rem "JetBrains Mono", monospace;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo5">← Term</a>
+      <span id="netLabel">Offline</span>
+      <a href="./demo7">Ops →</a>
+    </div>
+    <h1>Tracking</h1>
+    <p class="sub" id="modeLabel">Posisi realtime per target</p>
+
+    <div id="viewSetup">
+      <label for="token">Gateway token</label>
+      <input id="token" autocomplete="off" placeholder="Tempel token dari server" />
+      <label for="name">Nama</label>
+      <input id="name" value="Kurir" maxlength="24" />
+      <label for="targetSetup">Target ID</label>
+      <input id="targetSetup" value="unit-1" />
+      <p class="hint">Buka 2 tab dengan target sama: satu geser peta (kirim), satu pantau marker.</p>
+      <div class="actions">
+        <button class="btn-go" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div id="viewApp" class="hidden">
+      <div class="row">
+        <input id="target" value="unit-1" />
+        <button class="btn-go" id="btnSub" type="button">Subscribe</button>
+      </div>
+      <div class="map-wrap">
+        <canvas id="map"></canvas>
+      </div>
+      <p class="coords" id="coords">ketuk peta / Simulate</p>
+      <div class="actions">
+        <button class="btn-amber" id="btnSim" type="button">Simulate</button>
+        <button class="btn-ghost" id="btnStopSim" type="button">Stop sim</button>
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo6\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+    const BOUNDS = { latMin: -6.35, latMax: -6.05, lngMin: 106.7, lngMax: 107.0 };
+
+    let ws = null;
+    let subscribed = null;
+    let markers = new Map();
+    let me = { lat: -6.2, lng: 106.845 };
+    let simTimer = null;
+    let canvas = null;
+    let ctx = null;
+    let lw = 400;
+    let lh = 360;
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      $("viewApp").classList.toggle("hidden", on);
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMode(t, live) {
+      $("modeLabel").textContent = t;
+      $("modeLabel").className = "sub" + (live ? " live" : "");
+    }
+
+    function latLngToXY(lat, lng) {
+      const x = ((lng - BOUNDS.lngMin) / (BOUNDS.lngMax - BOUNDS.lngMin)) * lw;
+      const y = (1 - (lat - BOUNDS.latMin) / (BOUNDS.latMax - BOUNDS.latMin)) * lh;
+      return { x, y };
+    }
+
+    function xyToLatLng(x, y) {
+      const lng = BOUNDS.lngMin + (x / lw) * (BOUNDS.lngMax - BOUNDS.lngMin);
+      const lat = BOUNDS.latMin + (1 - y / lh) * (BOUNDS.latMax - BOUNDS.latMin);
+      return { lat, lng };
+    }
+
+    function draw() {
+      if (!ctx) return;
+      ctx.fillStyle = "#0a1411";
+      ctx.fillRect(0, 0, lw, lh);
+      ctx.strokeStyle = "#1e332b";
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 8; i++) {
+        const x = (lw / 8) * i;
+        const y = (lh / 8) * i;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, lh); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(lw, y); ctx.stroke();
+      }
+      const mine = latLngToXY(me.lat, me.lng);
+      ctx.fillStyle = "#2ec4a0";
+      ctx.beginPath();
+      ctx.arc(mine.x, mine.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#e8f2ec";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      for (const [id, p] of markers) {
+        const { x, y } = latLngToXY(p.lat, p.lng);
+        ctx.fillStyle = "#e0a35a";
+        ctx.beginPath();
+        ctx.arc(x, y, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#8aa396";
+        ctx.font = "11px JetBrains Mono, monospace";
+        ctx.fillText(String(id).slice(0, 8), x + 10, y + 4);
+      }
+    }
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      const wrap = canvas.parentElement;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      lw = wrap.clientWidth;
+      lh = wrap.clientHeight;
+      canvas.width = Math.floor(lw * dpr);
+      canvas.height = Math.floor(lh * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.style.width = lw + "px";
+      canvas.style.height = lh + "px";
+      draw();
+    }
+
+    function pushUpdate(lat, lng) {
+      me = { lat, lng };
+      $("coords").textContent = lat.toFixed(5) + ", " + lng.toFixed(5);
+      draw();
+      const target = $("target").value.trim() || "unit-1";
+      if (subscribed === target) {
+        send({
+          type: "tracking.update",
+          target,
+          lat,
+          lng,
+          meta: { name: $("name").value.trim() || "Kurir" },
+        });
+      }
+    }
+
+    function doSubscribe() {
+      const target = $("target").value.trim() || "unit-1";
+      if (subscribed && subscribed !== target) {
+        send({ type: "tracking.unsubscribe", target: subscribed });
+      }
+      markers.clear();
+      send({ type: "tracking.subscribe", target });
+      subscribed = target;
+      setMode("Subscribe: " + target, true);
+      pushUpdate(me.lat, me.lng);
+    }
+
+    function stopSim() {
+      if (simTimer) clearInterval(simTimer);
+      simTimer = null;
+    }
+
+    function onMapPointer(clientX, clientY) {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const { lat, lng } = xyToLatLng(clientX - rect.left, clientY - rect.top);
+      pushUpdate(lat, lng);
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) { alert("Tempel token dulu"); return; }
+      $("target").value = $("targetSetup").value.trim() || "unit-1";
+      const name = $("name").value.trim() || "Kurir";
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      ws.onopen = () => { $("netLabel").textContent = "Online"; };
+      ws.onclose = () => {
+        $("netLabel").textContent = "Offline";
+        stopSim();
+        showSetup(true);
+      };
+      ws.onerror = () => alert("Gagal terhubung");
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          send({ type: "identify", name });
+          showSetup(false);
+          canvas = $("map");
+          ctx = canvas.getContext("2d");
+          resizeCanvas();
+          doSubscribe();
+        } else if (msg.type === "tracking.snapshot") {
+          markers.clear();
+          for (const p of msg.positions || []) {
+            markers.set(p.from || "pos", { lat: p.lat, lng: p.lng, ts: p.ts });
+            me = { lat: p.lat, lng: p.lng };
+          }
+          $("coords").textContent = me.lat.toFixed(5) + ", " + me.lng.toFixed(5);
+          draw();
+          setMode("Snapshot " + msg.target, true);
+        } else if (msg.type === "tracking.update") {
+          markers.set(msg.from || "peer", { lat: msg.lat, lng: msg.lng, ts: msg.ts });
+          draw();
+          setMode("Update " + msg.target, true);
+        } else if (msg.type === "error") {
+          alert(msg.message || msg.code);
+        }
+      };
+    };
+
+    $("btnSub").onclick = () => doSubscribe();
+    $("btnSim").onclick = () => {
+      stopSim();
+      let t = 0;
+      simTimer = setInterval(() => {
+        t += 0.08;
+        pushUpdate(-6.2 + Math.sin(t) * 0.04, 106.845 + Math.cos(t * 0.7) * 0.05);
+      }, 400);
+      setMode("Simulate jalan…", true);
+    };
+    $("btnStopSim").onclick = () => {
+      stopSim();
+      setMode("Sim dihentikan", false);
+    };
+    $("btnLogout").onclick = () => {
+      stopSim();
+      if (subscribed) send({ type: "tracking.unsubscribe", target: subscribed });
+      ws?.close();
+      showSetup(true);
+    };
+
+    document.addEventListener("pointerdown", (e) => {
+      if (e.target === $("map")) onMapPointer(e.clientX, e.clientY);
+    });
+    document.addEventListener("pointermove", (e) => {
+      if (e.buttons && e.target === $("map")) onMapPointer(e.clientX, e.clientY);
+    });
+    window.addEventListener("resize", () => resizeCanvas());
+
+    const q = new URLSearchParams(location.search);
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("target")) $("targetSetup").value = q.get("target");
+  </script>
+</body>
+</html>

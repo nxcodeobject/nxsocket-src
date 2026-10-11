@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — QR Token</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #10151c;
+      --panel: #171e28;
+      --line: #2a3644;
+      --text: #e9eef4;
+      --muted: #8fa0b2;
+      --accent: #4aa3d9;
+      --ok: #5ecf8a;
+      --danger: #e06a6a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 65% 40% at 20% 0%, #1a3040 0%, transparent 55%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .card {
+      width: min(100%, 420px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 1.25rem;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: "IBM Plex Mono", monospace;
+      margin-bottom: 0.5rem;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0 0 0.25rem; font-size: 1.4rem; text-align: center; }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin: 0 0 1rem;
+      min-height: 1.2em;
+    }
+    .qr-wrap {
+      display: grid;
+      place-items: center;
+      background: #fff;
+      border-radius: 16px;
+      padding: 0.85rem;
+      margin: 0 auto 1rem;
+      width: fit-content;
+      min-height: 236px;
+      min-width: 236px;
+    }
+    #qrCanvas { display: block; width: 220px; height: 220px; }
+    label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin: 0.35rem 0 0.15rem;
+    }
+    .token-box {
+      width: 100%;
+      background: #0f1419;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      font: 500 0.72rem/1.4 "IBM Plex Mono", monospace;
+      word-break: break-all;
+    }
+    .actions {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+    button, .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.5rem 0.9rem;
+      font: 650 0.86rem "DM Sans", system-ui, sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-go { background: var(--accent); color: #061018; }
+    .btn-ok { background: var(--ok); color: #062418; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.4;
+      margin: 0.85rem 0 0;
+      text-align: center;
+    }
+    .links {
+      display: grid;
+      gap: 0.35rem;
+      margin-top: 0.9rem;
+    }
+    .links a {
+      color: var(--text);
+      text-decoration: none;
+      background: #121820;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.55rem 0.7rem;
+      font-size: 0.84rem;
+    }
+    .links a span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.7rem;
+      margin-top: 0.15rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    select {
+      width: 100%;
+      background: #0f1419;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.5rem 0.65rem;
+      font: inherit;
+      margin-top: 0.15rem;
+    }
+    .toast {
+      text-align: center;
+      color: var(--ok);
+      font-size: 0.8rem;
+      min-height: 1.2em;
+      margin-top: 0.45rem;
+    }
+    .toast.err { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <a href="./">API</a>
+      <span>NxSocket</span>
+      <a href="./demo">Chat</a>
+    </div>
+    <h1>QR Token</h1>
+    <p class="sub" id="subLabel">Memuat token dari API…</p>
+
+    <div class="qr-wrap">
+      <canvas id="qrCanvas" width="220" height="220"></canvas>
+    </div>
+
+    <label for="mode">Isi QR</label>
+    <select id="mode" disabled>
+      <option value="token">Token saja</option>
+      <option value="demo">Link demo + token</option>
+      <option value="demo2">Link demo2 (voice) + token</option>
+      <option value="demo3">Link demo3 (video) + token</option>
+      <option value="demo8">Link demo8 (video grup) + token</option>
+      <option value="demo10">Link demo10 (SFU) + token</option>
+      <option value="demo11">Link demo11 (feed) + token</option>
+      <option value="demo12">Link demo12 (grup chat) + token</option>
+    </select>
+
+    <label for="tokenBox">Gateway token</label>
+    <div class="token-box" id="tokenBox">…</div>
+    <p class="toast" id="toast"></p>
+
+    <div class="actions">
+      <button class="btn-go" type="button" id="btnCopy" disabled>Salin token</button>
+      <a class="btn btn-ok" id="btnOpen" href="#">Buka demo</a>
+      <button class="btn-ghost" type="button" id="btnReload">Muat ulang</button>
+    </div>
+
+    <div class="links" id="quickLinks"></div>
+    <p class="hint">API: <code>/v1/qr.json</code> → HTML gambar QR sendiri (server tidak generate QR).</p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const apiBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/qr\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    /** @type {{ token: string, base: string } | null} */
+    let data = null;
+
+    function payloadFor(mode) {
+      if (!data) return "";
+      if (mode === "token") return data.token;
+      return `${data.base}/${mode}?token=${encodeURIComponent(data.token)}`;
+    }
+
+    function renderQr() {
+      if (!data) return;
+      const mode = $("mode").value;
+      const text = payloadFor(mode);
+      $("subLabel").textContent =
+        mode === "token" ? "Scan untuk dapat token gateway" : "Scan untuk buka " + mode + " + token";
+      $("btnOpen").href = mode === "token" ? `${data.base}/demo?token=${encodeURIComponent(data.token)}` : text;
+      $("btnOpen").textContent = mode === "token" ? "Buka Chat" : "Buka " + mode;
+      if (typeof QRCode === "undefined") {
+        $("toast").className = "toast err";
+        $("toast").textContent = "Gagal load library QR (CDN)";
+        return;
+      }
+      QRCode.toCanvas(
+        $("qrCanvas"),
+        text,
+        { width: 220, margin: 1, color: { dark: "#10151c", light: "#ffffff" } },
+        (err) => {
+          if (err) {
+            $("toast").className = "toast err";
+            $("toast").textContent = "Gagal buat QR";
+          }
+        },
+      );
+    }
+
+    function renderLinks() {
+      if (!data) return;
+      const pages = [
+        ["demo", "Chat room"],
+        ["demo2", "Voice / telepon grup"],
+        ["demo3", "Video 1:1"],
+        ["demo12", "Grup chat + DM"],
+        ["demo11", "Social feed"],
+      ];
+      $("quickLinks").innerHTML = pages
+        .map(
+          ([p, label]) =>
+            `<a href="${data.base}/${p}?token=${encodeURIComponent(data.token)}"><strong>${label}</strong><span>/${p}</span></a>`,
+        )
+        .join("");
+    }
+
+    async function loadToken() {
+      $("subLabel").textContent = "Memuat token dari API…";
+      $("toast").textContent = "";
+      $("toast").className = "toast";
+      try {
+        const res = await fetch(apiBase + "/qr.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        if (!json.token) throw new Error("Field token kosong");
+        data = {
+          token: String(json.token),
+          base: String(json.base || apiBase),
+        };
+        $("tokenBox").textContent = data.token;
+        $("mode").disabled = false;
+        $("btnCopy").disabled = false;
+        const q = new URLSearchParams(location.search);
+        const preset = (q.get("page") || "").replace(/^\//, "");
+        if (preset && [...$("mode").options].some((o) => o.value === preset)) {
+          $("mode").value = preset;
+        }
+        renderLinks();
+        renderQr();
+      } catch (err) {
+        $("subLabel").textContent = "Gagal muat token";
+        $("toast").className = "toast err";
+        $("toast").textContent = err.message || "Error";
+        $("tokenBox").textContent = "(tidak tersedia)";
+      }
+    }
+
+    $("mode").onchange = renderQr;
+    $("btnReload").onclick = () => loadToken();
+    $("btnCopy").onclick = async () => {
+      if (!data) return;
+      try {
+        await navigator.clipboard.writeText(data.token);
+        $("toast").className = "toast";
+        $("toast").textContent = "Token disalin";
+      } catch {
+        $("toast").className = "toast err";
+        $("toast").textContent = "Salin manual dari kotak token";
+      }
+      setTimeout(() => { $("toast").textContent = ""; }, 2000);
+    };
+
+    loadToken();
+  </script>
+</body>
+</html>

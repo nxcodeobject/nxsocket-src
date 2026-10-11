@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — Social Feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #10151c;
+      --panel: #171e28;
+      --line: #2a3644;
+      --text: #e9eef4;
+      --muted: #8fa0b2;
+      --accent: #4aa3d9;
+      --ok: #5ecf8a;
+      --soft: #1c2632;
+      --like: #e07a9a;
+      --danger: #d97878;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 65% 40% at 15% 0%, #1a3040 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 100% 100%, #1a2830 0%, transparent 45%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 440px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.1rem;
+      min-height: 600px;
+      max-height: min(94vh, 860px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 {
+      margin: 0 0 0.1rem;
+      font-size: 1.4rem;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 0 0 0.65rem;
+      min-height: 1.1em;
+    }
+    .sub.live { color: var(--ok); }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.35rem 0 0.15rem; }
+    input, textarea {
+      width: 100%;
+      background: #0f1419;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.55rem 0.65rem;
+      font: inherit;
+      outline: none;
+      resize: vertical;
+    }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { min-height: 72px; }
+    .hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; margin: 0.4rem 0 0; }
+    .actions { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-top: 0.5rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.5rem 0.9rem;
+      font: 650 0.86rem "DM Sans", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-go { background: var(--accent); color: #061018; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .btn-soft { background: var(--soft); color: var(--text); border: 1px solid var(--line); font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+    .btn-like { background: var(--soft); color: var(--muted); border: 1px solid var(--line); font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+    .btn-like.on { color: var(--like); border-color: var(--like); }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid #5a3030; font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+    .btn-follow.on { color: var(--ok); border-color: var(--ok); }
+    #viewApp {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+    .composer {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.55rem;
+    }
+    .composer .row {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+      align-items: center;
+    }
+    .composer .row button { flex-shrink: 0; }
+    #imgPreviewWrap {
+      margin-top: 0.4rem;
+      position: relative;
+      display: none;
+    }
+    #imgPreviewWrap.show { display: block; }
+    #imgPreview {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+    }
+    #btnClearImg {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.72rem;
+    }
+    #feed {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding-right: 0.15rem;
+    }
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.85rem;
+      margin: 1.5rem 0;
+    }
+    .post {
+      background: #121820;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.7rem 0.75rem;
+    }
+    .post-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+      font-size: 0.78rem;
+    }
+    .post-head strong { color: var(--text); }
+    .post-head time { color: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; }
+    .post-body {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 0.45rem;
+    }
+    .post-body:empty { display: none; }
+    .shared-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.5rem 0.55rem;
+      margin-bottom: 0.45rem;
+      background: #0f1419;
+    }
+    .shared-box .sh-name {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    .shared-box .sh-text {
+      font-size: 0.86rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .post-img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 0.45rem;
+      border: 1px solid var(--line);
+    }
+    .post-bar {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.45rem;
+    }
+    .comments {
+      border-top: 1px solid var(--line);
+      padding-top: 0.45rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .cmt {
+      background: var(--soft);
+      border-radius: 10px;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+    .cmt.reply {
+      margin-left: 1rem;
+      border-left: 2px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+    }
+    .cmt-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.15rem;
+    }
+    .cmt-meta button {
+      background: none;
+      border: 0;
+      color: var(--accent);
+      padding: 0;
+      font: 600 0.72rem "DM Sans", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .reply-box {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.35rem;
+      align-items: center;
+    }
+    .reply-box input { flex: 1; padding: 0.4rem 0.55rem; font-size: 0.82rem; border-radius: 999px; }
+    .reply-box button { flex-shrink: 0; }
+    #toast {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 1rem;
+      background: #1a2834;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.84rem;
+      line-height: 1.35;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 5;
+    }
+    #toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo10">← SFU</a>
+      <span id="netLabel">Offline</span>
+      <a href="./demo">Chat →</a>
+    </div>
+    <h1>Social Feed</h1>
+    <p class="sub" id="modeLabel">Follow · share · hapus</p>
+
+    <div id="viewSetup">
+      <label for="token">Gateway token</label>
+      <input id="token" autocomplete="off" placeholder="Tempel token dari server" />
+      <label for="name">Nama</label>
+      <input id="name" value="A1" maxlength="24" />
+      <label for="room">Room feed</label>
+      <input id="room" value="social" maxlength="64" />
+      <p class="hint">A1 follow A2 → A2 posting → A1 dapat notif. Share & hapus status sendiri juga tersedia.</p>
+      <div class="actions">
+        <button class="btn-go" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div id="viewApp" class="hidden">
+      <div class="composer">
+        <textarea id="postText" maxlength="2000" placeholder="Apa yang kamu pikirkan?"></textarea>
+        <div id="imgPreviewWrap">
+          <img id="imgPreview" alt="preview" />
+          <button class="btn-ghost" type="button" id="btnClearImg">Hapus</button>
+        </div>
+        <div class="row">
+          <span class="hint" id="roomTag" style="margin:0;flex:1;">room: social</span>
+          <label class="btn-soft" style="margin:0;cursor:pointer;">
+            Foto
+            <input id="imgFile" type="file" accept="image/*" hidden />
+          </label>
+          <button class="btn-go" id="btnPost" type="button">Posting</button>
+        </div>
+      </div>
+      <div id="feed"><p class="empty">Belum ada status</p></div>
+      <div class="actions">
+        <button class="btn-ghost" id="btnLeave" type="button">Keluar</button>
+      </div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo11\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+    const MAX_IMG = 280000;
+
+    let ws = null;
+    let room = "social";
+    let myName = "A1";
+    let mySessionId = "";
+    /** @type {Map<string, any>} */
+    let posts = new Map();
+    /** @type {Array<{from:string,name:string}>} */
+    let following = [];
+    /** @type {{ postId: string, parentId: string|null } | null} */
+    let replyTarget = null;
+    /** @type {string|null} */
+    let pendingImage = null;
+    let toastTimer = null;
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      $("viewApp").classList.toggle("hidden", on);
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMode(t, live) {
+      $("modeLabel").textContent = t;
+      $("modeLabel").className = "sub" + (live ? " live" : "");
+    }
+
+    function fmtTime(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
+      } catch {
+        return "";
+      }
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showToast(text) {
+      const el = $("toast");
+      el.textContent = text;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 4200);
+    }
+
+    function notifyBrowser(title, body) {
+      if (!("Notification" in window)) return;
+      if (Notification.permission === "granted" && document.hidden) {
+        try { new Notification(title, { body, silent: false }); } catch {}
+      }
+    }
+
+    function isFollowing(from, name) {
+      const n = (name || "").toLowerCase();
+      return following.some(
+        (t) => (from && t.from === from) || (n && (t.name || "").toLowerCase() === n),
+      );
+    }
+
+    function upsertPost(p) {
+      posts.set(p.id, {
+        ...p,
+        likes: Array.isArray(p.likes) ? p.likes.slice() : [],
+        comments: Array.isArray(p.comments) ? p.comments.slice() : [],
+      });
+    }
+
+    function addComment(postId, comment) {
+      const p = posts.get(postId);
+      if (!p) return;
+      if (p.comments.some((c) => c.id === comment.id)) return;
+      p.comments.push(comment);
+    }
+
+    function setLikes(postId, likes) {
+      const p = posts.get(postId);
+      if (!p) return;
+      p.likes = Array.isArray(likes) ? likes.slice() : [];
+    }
+
+    function clearPendingImage() {
+      pendingImage = null;
+      $("imgFile").value = "";
+      $("imgPreview").removeAttribute("src");
+      $("imgPreviewWrap").classList.remove("show");
+    }
+
+    function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Gagal baca file"));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Gambar tidak valid"));
+          img.onload = () => {
+            const maxW = 720;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxW) {
+              h = Math.round((h * maxW) / w);
+              w = maxW;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            let quality = 0.72;
+            let data = canvas.toDataURL("image/jpeg", quality);
+            while (data.length > MAX_IMG && quality > 0.35) {
+              quality -= 0.08;
+              data = canvas.toDataURL("image/jpeg", quality);
+            }
+            if (data.length > MAX_IMG) {
+              reject(new Error("Foto masih terlalu besar setelah compress"));
+              return;
+            }
+            resolve(data);
+          };
+          img.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderFeed() {
+      const list = [...posts.values()].sort((a, b) => (a.ts < b.ts ? 1 : -1));
+      if (!list.length) {
+        $("feed").innerHTML = '<p class="empty">Belum ada status</p>';
+        return;
+      }
+      $("feed").innerHTML = list.map((p) => {
+        const likes = p.likes || [];
+        const liked = likes.some((l) => l.from === mySessionId);
+        const mine = p.from === mySessionId;
+        const followed = isFollowing(p.from, p.name);
+        const tops = (p.comments || []).filter((c) => !c.parentId);
+        const replies = (p.comments || []).filter((c) => c.parentId);
+        const commentHtml = tops.map((c) => {
+          const kids = replies.filter((r) => r.parentId === c.id);
+          const kidsHtml = kids.map((r) => `
+            <div class="cmt reply" data-cid="${esc(r.id)}">
+              <div class="cmt-meta"><strong>${esc(r.name)}</strong><time>${esc(fmtTime(r.ts))}</time></div>
+              <div>${esc(r.text)}</div>
+            </div>`).join("");
+          return `
+            <div class="cmt" data-cid="${esc(c.id)}">
+              <div class="cmt-meta">
+                <strong>${esc(c.name)}</strong>
+                <span>
+                  <time>${esc(fmtTime(c.ts))}</time>
+                  · <button type="button" data-reply="${esc(p.id)}" data-parent="${esc(c.id)}">Balas</button>
+                </span>
+              </div>
+              <div>${esc(c.text)}</div>
+              ${kidsHtml}
+            </div>`;
+        }).join("");
+
+        const isReplying = replyTarget && replyTarget.postId === p.id;
+        const replyBox = isReplying
+          ? `<div class="reply-box">
+               <input id="replyInput" maxlength="2000" placeholder="${replyTarget.parentId ? "Tulis balasan…" : "Tulis komentar…"}" />
+               <button class="btn-soft" type="button" id="btnSendReply">Kirim</button>
+               <button class="btn-ghost" type="button" id="btnCancelReply">×</button>
+             </div>`
+          : "";
+
+        const imgHtml = p.image
+          ? `<img class="post-img" src="${esc(p.image)}" alt="foto status" loading="lazy" />`
+          : "";
+
+        const sharedHtml = p.shared
+          ? `<div class="shared-box">
+               <div class="sh-name">Dibagikan dari <strong>${esc(p.shared.name)}</strong></div>
+               <div class="sh-text">${esc(p.shared.text || "")}</div>
+               ${p.shared.image ? `<img class="post-img" src="${esc(p.shared.image)}" alt="foto share" loading="lazy" />` : ""}
+             </div>`
+          : "";
+
+        const ownerBtns = mine
+          ? `<button class="btn-danger" type="button" data-del="${esc(p.id)}">Hapus</button>`
+          : `<button class="btn-soft btn-follow${followed ? " on" : ""}" type="button" data-follow-from="${esc(p.from)}" data-follow-name="${esc(p.name)}">${followed ? "Following" : "Follow"}</button>
+             <button class="btn-soft" type="button" data-share="${esc(p.id)}">Share</button>`;
+
+        return `
+          <article class="post" data-pid="${esc(p.id)}">
+            <div class="post-head">
+              <strong>${esc(p.name)}</strong>
+              <time>${esc(fmtTime(p.ts))}</time>
+            </div>
+            <div class="post-body">${esc(p.text || "")}</div>
+            ${sharedHtml}
+            ${imgHtml}
+            <div class="post-bar">
+              <button class="btn-like${liked ? " on" : ""}" type="button" data-like="${esc(p.id)}">
+                ♥ ${likes.length}
+              </button>
+              <button class="btn-soft" type="button" data-reply="${esc(p.id)}" data-parent="">Komentar</button>
+              ${ownerBtns}
+            </div>
+            <div class="comments">
+              ${commentHtml || '<span class="hint" style="margin:0">Belum ada komentar</span>'}
+              ${replyBox}
+            </div>
+          </article>`;
+      }).join("");
+
+      $("feed").querySelectorAll("[data-reply]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          replyTarget = {
+            postId: btn.getAttribute("data-reply"),
+            parentId: btn.getAttribute("data-parent") || null,
+          };
+          renderFeed();
+          const inp = $("replyInput");
+          if (inp) inp.focus();
+        });
+      });
+
+      $("feed").querySelectorAll("[data-like]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          send({ type: "feed.like", room, postId: btn.getAttribute("data-like") });
+        });
+      });
+
+      $("feed").querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!confirm("Hapus status ini?")) return;
+          send({ type: "feed.delete", room, postId: btn.getAttribute("data-del") });
+        });
+      });
+
+      $("feed").querySelectorAll("[data-share]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const note = prompt("Komentar share (opsional):", "") || "";
+          send({ type: "feed.share", room, postId: btn.getAttribute("data-share"), text: note });
+        });
+      });
+
+      $("feed").querySelectorAll("[data-follow-from]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          send({
+            type: "feed.follow",
+            targetFrom: btn.getAttribute("data-follow-from") || "",
+            targetName: btn.getAttribute("data-follow-name") || "",
+          });
+        });
+      });
+
+      const sendBtn = $("btnSendReply");
+      const cancelBtn = $("btnCancelReply");
+      if (sendBtn) {
+        sendBtn.onclick = () => {
+          const text = ($("replyInput")?.value || "").trim();
+          if (!text || !replyTarget) return;
+          send({
+            type: "feed.comment",
+            room,
+            postId: replyTarget.postId,
+            text,
+            parentId: replyTarget.parentId || null,
+          });
+          replyTarget = null;
+          renderFeed();
+        };
+      }
+      if (cancelBtn) {
+        cancelBtn.onclick = () => {
+          replyTarget = null;
+          renderFeed();
+        };
+      }
+    }
+
+    function refreshMode() {
+      const n = following.length;
+      setMode("Online · " + room + (n ? " · follow " + n : ""), true);
+    }
+
+    $("imgFile").onchange = async () => {
+      const file = $("imgFile").files && $("imgFile").files[0];
+      if (!file) return;
+      try {
+        pendingImage = await compressImage(file);
+        $("imgPreview").src = pendingImage;
+        $("imgPreviewWrap").classList.add("show");
+      } catch (err) {
+        clearPendingImage();
+        alert(err.message || "Gagal compress foto");
+      }
+    };
+
+    $("btnClearImg").onclick = () => clearPendingImage();
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) { alert("Tempel token dulu"); return; }
+      myName = $("name").value.trim() || "A1";
+      room = $("room").value.trim() || "social";
+      $("roomTag").textContent = "room: " + room;
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      ws.onopen = () => { $("netLabel").textContent = "Online"; };
+      ws.onclose = () => {
+        $("netLabel").textContent = "Offline";
+        setMode("Terputus", false);
+        showSetup(true);
+      };
+      ws.onerror = () => alert("Gagal terhubung");
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          mySessionId = msg.sessionId || "";
+          send({ type: "identify", name: myName });
+          posts = new Map();
+          following = [];
+          replyTarget = null;
+          showSetup(false);
+          refreshMode();
+        } else if (msg.type === "identified") {
+          send({ type: "feed.join", room });
+        } else if (msg.type === "feed.snapshot" && msg.room === room) {
+          posts = new Map();
+          for (const p of msg.posts || []) upsertPost(p);
+          renderFeed();
+        } else if (msg.type === "feed.post.created" && msg.room === room) {
+          upsertPost(msg.post);
+          renderFeed();
+        } else if (msg.type === "feed.post.deleted" && msg.room === room) {
+          posts.delete(msg.postId);
+          renderFeed();
+        } else if (msg.type === "feed.comment.created" && msg.room === room) {
+          addComment(msg.postId, msg.comment);
+          renderFeed();
+        } else if (msg.type === "feed.like.updated" && msg.room === room) {
+          setLikes(msg.postId, msg.likes);
+          renderFeed();
+        } else if (msg.type === "feed.follows") {
+          following = Array.isArray(msg.following) ? msg.following.slice() : [];
+          refreshMode();
+          renderFeed();
+        } else if (msg.type === "feed.notify") {
+          const map = {
+            comment: "mengomentari statusmu",
+            reply: "membalas komentarmu",
+            post: "baru posting",
+            share: "membagikan status",
+          };
+          const line = `${msg.name} ${map[msg.kind] || "update"}: ${msg.text}`;
+          showToast(line);
+          notifyBrowser("NxSocket Feed", line);
+        } else if (msg.type === "error") {
+          alert(msg.message || msg.code || "Error");
+        }
+      };
+    };
+
+    $("name").addEventListener("input", () => { $("name").dataset.touched = "1"; });
+
+    $("btnPost").onclick = () => {
+      const text = $("postText").value.trim();
+      if (!text && !pendingImage) {
+        alert("Isi teks atau pilih foto");
+        return;
+      }
+      send({
+        type: "feed.post",
+        room,
+        text: text || "",
+        image: pendingImage || null,
+      });
+      $("postText").value = "";
+      clearPendingImage();
+    };
+
+    $("btnLeave").onclick = () => {
+      if (ws) ws.close();
+      ws = null;
+      posts = new Map();
+      following = [];
+      clearPendingImage();
+      showSetup(true);
+      setMode("Follow · share · hapus", false);
+    };
+
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get("token")) $("token").value = q.get("token");
+      if (q.get("name")) $("name").value = q.get("name");
+      if (q.get("room")) $("room").value = q.get("room");
+    } catch {}
+  </script>
+</body>
+</html>

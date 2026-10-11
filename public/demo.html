@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="theme-color" content="#3db89a" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/nxsocket.svg" type="image/svg+xml" />
+  <title>NxSocket — Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #172029;
+      --line: #2c3b4a;
+      --text: #e8eef4;
+      --muted: #8fa3b5;
+      --accent: #3db89a;
+      --ok: #5ecf8a;
+      --danger: #e06a6a;
+      --amber: #e0a35a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 70% 45% at 0% 0%, #1a3a34 0%, transparent 55%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 420px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.1rem;
+      min-height: 580px;
+      max-height: min(94vh, 780px);
+      display: flex;
+      flex-direction: column;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.55rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0 0 0.2rem; font-size: 1.35rem; text-align: center; letter-spacing: -0.02em; }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 0 0 0.7rem;
+      min-height: 1.15em;
+    }
+    .sub.live { color: var(--ok); }
+    .sub.warn { color: var(--amber); }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.35rem 0 0.15rem; }
+    input {
+      width: 100%;
+      background: #0f1419;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.55rem 0.65rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    .hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; margin: 0.4rem 0 0; }
+    .actions { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-top: 0.55rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.95rem;
+      font: 650 0.88rem "Outfit", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-go { background: var(--accent); color: #06241c; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .btn-call { background: #2fbf71; color: #062214; }
+    .btn-vid { background: #5b9fd4; color: #0a1520; }
+    #viewApp { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 0.5rem; }
+    .banner {
+      font: 500 0.72rem "IBM Plex Mono", monospace;
+      color: var(--amber);
+      background: #1a1810;
+      border: 1px solid #4a3f28;
+      border-radius: 10px;
+      padding: 0.4rem 0.55rem;
+      display: none;
+    }
+    .banner.show { display: block; }
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      max-height: 72px;
+      overflow-y: auto;
+    }
+    .pill {
+      font-size: 0.72rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #0f1419;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .pill.on { border-color: var(--ok); color: var(--ok); }
+    .chat {
+      flex: 1;
+      min-height: 200px;
+      overflow-y: auto;
+      background: #0f1419;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .bubble {
+      max-width: 88%;
+      padding: 0.45rem 0.65rem;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.me { align-self: flex-end; background: #1f4a3c; }
+    .bubble.them { align-self: flex-start; background: #243040; }
+    .bubble.sys {
+      align-self: center;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .bubble .meta { font-size: 0.68rem; color: var(--muted); margin-bottom: 0.15rem; }
+    .composer { display: flex; gap: 0.4rem; }
+    .composer input { flex: 1; }
+    .links { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo2">Telepon →</a>
+      <span id="netLabel">Offline</span>
+      <a href="./demo3">Video →</a>
+    </div>
+    <h1>Chat</h1>
+    <p class="sub" id="modeLabel">Presence + room chat</p>
+
+    <div id="viewSetup">
+      <label for="token">Gateway token</label>
+      <input id="token" autocomplete="off" placeholder="Tempel token" />
+      <label for="name">Nama</label>
+      <input id="name" value="Aku" maxlength="24" />
+      <label for="room">Room</label>
+      <input id="room" value="lobby" />
+      <p class="hint">Setelah masuk: lihat online, chat, atau buka Telepon/Video dengan room sama.</p>
+      <div class="actions">
+        <button class="btn-go" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div id="viewApp" class="hidden">
+      <div class="banner" id="reconnectBanner">Offline — mencoba menyambung ulang…</div>
+      <div class="pills" id="presenceList" title="Ketuk nama untuk isi room call"></div>
+      <p class="hint" id="monLine">—</p>
+      <div class="chat" id="chat"></div>
+      <div class="composer">
+        <input id="chatText" placeholder="Tulis pesan…" autocomplete="off" />
+        <button class="btn-go" id="btnSend" type="button">Kirim</button>
+      </div>
+      <div class="links">
+        <button class="btn-call" id="btnVoice" type="button">Telepon</button>
+        <button class="btn-vid" id="btnVideo" type="button">Video</button>
+        <button class="btn-ghost" id="btnInvite" type="button">Salin undangan</button>
+        <button class="btn-ghost" id="btnExport" type="button">Export chat</button>
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let sessionId = null;
+    let joinedRoom = null;
+    let myName = "Aku";
+    let intentionalClose = false;
+    let reconnectTimer = null;
+    let reconnectAttempt = 0;
+    let typingTimer = null;
+    let lastTypingSent = false;
+    let typingLine = null;
+    const presence = new Map();
+    const chatLog = [];
+    const STORE_KEY = "nxsocket_demo_identity";
+
+    function loadIdentity() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return;
+        const o = JSON.parse(raw);
+        if (o.token && !$("token").value) $("token").value = o.token;
+        if (o.name) $("name").value = o.name;
+        if (o.room) $("room").value = o.room;
+      } catch { /* */ }
+    }
+
+    function saveIdentity() {
+      try {
+        localStorage.setItem(
+          STORE_KEY,
+          JSON.stringify({
+            token: $("token").value.trim(),
+            name: $("name").value.trim() || "Aku",
+            room: $("room").value.trim() || "lobby",
+          }),
+        );
+      } catch { /* */ }
+    }
+
+    function applyProfileHint(msg) {
+      const q = new URLSearchParams(location.search);
+      if (msg.name && !q.get("name")) {
+        const cur = $("name").value.trim();
+        if (!cur || cur === "Aku") {
+          $("name").value = msg.name;
+          myName = msg.name;
+          if (ws?.readyState === WebSocket.OPEN) send({ type: "identify", name: myName });
+        }
+      }
+      if (msg.lastRoom && !q.get("room")) {
+        const cur = $("room").value.trim();
+        if (!cur || cur === "lobby") {
+          $("room").value = msg.lastRoom;
+          if (joinedRoom === "lobby" && msg.lastRoom !== "lobby" && ws?.readyState === WebSocket.OPEN) {
+            joinedRoom = msg.lastRoom;
+            send({ type: "join", room: joinedRoom });
+            setMode("Room #" + joinedRoom, "live");
+          }
+        }
+      }
+      saveIdentity();
+    }
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      $("viewApp").classList.toggle("hidden", on);
+    }
+
+    function setMode(t, kind) {
+      $("modeLabel").textContent = t;
+      $("modeLabel").className = "sub" + (kind === "live" ? " live" : kind === "warn" ? " warn" : "");
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function appendChat(text, cls, meta) {
+      const div = document.createElement("div");
+      div.className = "bubble " + (cls || "them");
+      if (meta) {
+        const m = document.createElement("div");
+        m.className = "meta";
+        m.textContent = meta;
+        div.appendChild(m);
+      }
+      const body = document.createElement("div");
+      body.textContent = text;
+      div.appendChild(body);
+      $("chat").appendChild(div);
+      $("chat").scrollTop = $("chat").scrollHeight;
+      if (cls !== "sys") {
+        chatLog.push({
+          ts: new Date().toISOString(),
+          role: cls || "them",
+          meta: meta || "",
+          text,
+        });
+      }
+      return div;
+    }
+
+    function showTyping(name) {
+      const text = (name || "?") + " sedang mengetik…";
+      if (typingLine) typingLine.querySelector("div:last-child").textContent = text;
+      else typingLine = appendChat(text, "sys");
+    }
+
+    function hideTyping() {
+      if (typingLine) {
+        typingLine.remove();
+        typingLine = null;
+      }
+    }
+
+    function renderPresence() {
+      const box = $("presenceList");
+      box.innerHTML = "";
+      for (const u of presence.values()) {
+        const p = document.createElement("button");
+        p.type = "button";
+        p.className = "pill" + (u.status === "online" ? " on" : "");
+        p.textContent = (u.name || u.userId || "?").slice(0, 18);
+        p.title = "Pakai sebagai nama teman di call";
+        p.onclick = () => {
+          const friend = encodeURIComponent(u.name || "Teman");
+          // simpan preferensi untuk deep-link
+          sessionStorage.setItem("nx_friend", u.name || "Teman");
+          setMode("Teman dipilih: " + (u.name || "?"), "live");
+        };
+        box.appendChild(p);
+      }
+      if (!presence.size) {
+        const empty = document.createElement("span");
+        empty.className = "hint";
+        empty.textContent = "Belum ada yang online";
+        box.appendChild(empty);
+      }
+    }
+
+    function callUrl(page) {
+      const token = $("token").value.trim();
+      const room = $("room").value.trim() || "lobby";
+      const name = encodeURIComponent(myName);
+      const friend = encodeURIComponent(sessionStorage.getItem("nx_friend") || "Teman");
+      const u = new URL(hostBase + "/" + page);
+      u.searchParams.set("token", token);
+      u.searchParams.set("name", myName);
+      u.searchParams.set("friend", sessionStorage.getItem("nx_friend") || "Teman");
+      u.searchParams.set("room", room);
+      return u.toString();
+    }
+
+    function scheduleReconnect() {
+      if (intentionalClose) return;
+      $("reconnectBanner").classList.add("show");
+      $("netLabel").textContent = "Offline";
+      setMode("Menyambung ulang…", "warn");
+      const delay = Math.min(10000, 800 * Math.pow(1.6, reconnectAttempt++));
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => connectWs(true), delay);
+    }
+
+    function connectWs(isReconnect) {
+      const token = $("token").value.trim();
+      if (!token) return;
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        try { ws.close(); } catch { /* */ }
+      }
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      ws.onopen = () => {
+        $("netLabel").textContent = "Online";
+        $("reconnectBanner").classList.remove("show");
+        reconnectAttempt = 0;
+      };
+      ws.onclose = () => {
+        if (intentionalClose) {
+          $("netLabel").textContent = "Offline";
+          showSetup(true);
+          return;
+        }
+        scheduleReconnect();
+      };
+      ws.onerror = () => { /* onclose handles */ };
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        handleMessage(msg);
+      };
+    }
+
+    function handleMessage(msg) {
+      switch (msg.type) {
+        case "welcome":
+          sessionId = msg.sessionId;
+          myName = $("name").value.trim() || "Aku";
+          send({ type: "identify", name: myName });
+          send({ type: "presence.subscribe", scope: "global" });
+          send({ type: "monitoring.subscribe" });
+          joinedRoom = $("room").value.trim() || "lobby";
+          send({ type: "join", room: joinedRoom });
+          showSetup(false);
+          if (!reconnectAttempt) {
+            $("chat").innerHTML = "";
+            chatLog.length = 0;
+          }
+          saveIdentity();
+          setMode("Room #" + joinedRoom, "live");
+          break;
+        case "profile.hint":
+          applyProfileHint(msg);
+          break;
+        case "joined":
+          appendChat("masuk #" + msg.room + (msg.peers != null ? " · " + msg.peers + " peer" : ""), "sys");
+          break;
+        case "chat.history":
+          if (msg.room !== joinedRoom) break;
+          if (msg.messages && msg.messages.length) {
+            appendChat("--- riwayat (" + msg.messages.length + ") ---", "sys");
+            for (const m of msg.messages) {
+              const mine = m.from === sessionId;
+              const ts = m.ts ? new Date(m.ts).toLocaleTimeString() : "";
+              appendChat(m.text, mine ? "me" : "them", (m.name || "?") + (ts ? " · " + ts : ""));
+            }
+          } else {
+            appendChat("belum ada riwayat di room ini", "sys");
+          }
+          break;
+        case "presence.snapshot":
+          presence.clear();
+          for (const u of msg.users || []) presence.set(u.userId, u);
+          renderPresence();
+          break;
+        case "presence.update":
+          if (!msg.user) break;
+          if (msg.user.status === "offline") presence.delete(msg.user.userId);
+          else presence.set(msg.user.userId, msg.user);
+          renderPresence();
+          break;
+        case "chat.message":
+          hideTyping();
+          {
+            const mine = msg.from === sessionId;
+            const ts = msg.ts ? new Date(msg.ts).toLocaleTimeString() : "";
+            appendChat(msg.text, mine ? "me" : "them", (msg.name || "?") + (ts ? " · " + ts : ""));
+          }
+          break;
+        case "chat.typing":
+          if (msg.from === sessionId) break;
+          if (msg.typing) showTyping(msg.name);
+          else hideTyping();
+          break;
+        case "monitoring.stats":
+          $("monLine").textContent = "koneksi: " + msg.connections + " · room aktif: " + msg.rooms;
+          break;
+        case "ice.config":
+          setMode((msg.label || "ICE OK") + " · #" + (joinedRoom || ""), "live");
+          break;
+        case "error":
+          if (msg.code !== "not_in_room") appendChat("error: " + (msg.message || msg.code), "sys");
+          break;
+      }
+    }
+
+    $("btnReady").onclick = () => {
+      if (!$("token").value.trim()) {
+        alert("Tempel token dulu");
+        return;
+      }
+      intentionalClose = false;
+      reconnectAttempt = 0;
+      saveIdentity();
+      connectWs(false);
+    };
+
+    $("btnSend").onclick = () => {
+      const text = $("chatText").value.trim();
+      if (!text || !joinedRoom) return;
+      if (lastTypingSent) {
+        send({ type: "chat.typing", room: joinedRoom, typing: false });
+        lastTypingSent = false;
+      }
+      clearTimeout(typingTimer);
+      hideTyping();
+      send({ type: "chat.send", room: joinedRoom, text });
+      $("chatText").value = "";
+    };
+
+    $("chatText").addEventListener("input", () => {
+      if (!joinedRoom) return;
+      if (!lastTypingSent) {
+        send({ type: "chat.typing", room: joinedRoom, typing: true });
+        lastTypingSent = true;
+      }
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        send({ type: "chat.typing", room: joinedRoom, typing: false });
+        lastTypingSent = false;
+      }, 1200);
+    });
+
+    $("chatText").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        $("btnSend").click();
+      }
+    });
+
+    $("btnVoice").onclick = () => { location.href = callUrl("demo2"); };
+    $("btnVideo").onclick = () => { location.href = callUrl("demo3"); };
+    $("btnInvite").onclick = async () => {
+      const link = callUrl("demo2");
+      try {
+        await navigator.clipboard.writeText(link);
+        setMode("Link undangan telepon disalin", "live");
+      } catch {
+        prompt("Salin link undangan:", link);
+      }
+    };
+    $("btnExport").onclick = () => {
+      const room = joinedRoom || $("room").value.trim() || "lobby";
+      const payload = {
+        room,
+        exportedAt: new Date().toISOString(),
+        messages: chatLog,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "nxsocket-chat-" + room + "-" + Date.now() + ".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setMode("Chat diexport (" + chatLog.length + " pesan)", "live");
+    };
+    $("btnLogout").onclick = () => {
+      intentionalClose = true;
+      clearTimeout(reconnectTimer);
+      ws?.close();
+      showSetup(true);
+    };
+
+    const q = new URLSearchParams(location.search);
+    loadIdentity();
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("room")) $("room").value = q.get("room");
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

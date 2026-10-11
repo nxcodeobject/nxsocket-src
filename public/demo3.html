@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="theme-color" content="#2fbf71" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/nxsocket.svg" type="image/svg+xml" />
+  <title>NxSocket — Video Call</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1512;
+      --card: #16211c;
+      --line: #2a3b33;
+      --text: #eef6f1;
+      --muted: #8aa396;
+      --green: #2fbf71;
+      --green-dark: #1f8a50;
+      --red: #e25555;
+      --amber: #e0a35a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, #1c3d30 0%, transparent 60%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 380px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.25rem 1.2rem 1.4rem;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.55rem;
+      padding: 1rem 0.4rem;
+    }
+    .avatar {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      background: #20352c;
+      border: 2px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 0.4rem;
+    }
+    .avatar.ring {
+      border-color: var(--amber);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .avatar.talk {
+      border-color: var(--green);
+      box-shadow: 0 0 0 8px color-mix(in srgb, var(--green) 16%, transparent);
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 35%, transparent); }
+      50% { box-shadow: 0 0 0 14px transparent; }
+    }
+    .title { font-size: 1.35rem; font-weight: 700; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; min-height: 1.3em; }
+    .setup { width: 100%; text-align: left; }
+    label { display: block; font-size: 0.75rem; color: var(--muted); margin: 0.45rem 0 0.2rem; }
+    input {
+      width: 100%;
+      background: #101a16;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--green-dark); }
+    .actions {
+      display: flex;
+      gap: 0.7rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+      min-height: 64px;
+      align-items: center;
+    }
+    button {
+      font: inherit;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 0.85rem 1.25rem;
+    }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-call { background: var(--green); color: #062414; min-width: 150px; }
+    .btn-hang { background: var(--red); color: #fff; min-width: 150px; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      margin-top: 0.7rem;
+      line-height: 1.35;
+    }
+    .call-hist {
+      width: 100%;
+      margin-top: 0.85rem;
+      text-align: left;
+      border-top: 1px solid var(--line);
+      padding-top: 0.65rem;
+    }
+    .call-hist h2 {
+      margin: 0 0 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .call-hist h2 button {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.25rem 0.55rem;
+      min-width: 0;
+    }
+    .call-hist ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 9.5rem;
+      overflow-y: auto;
+    }
+    .call-hist li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(42, 59, 51, 0.55);
+      color: var(--text);
+    }
+    .call-hist li span.meta { color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
+    .call-hist .empty { color: var(--muted); font-size: 0.75rem; margin: 0; }
+    .call-hist .out { color: var(--green); }
+    .call-hist .missed, .call-hist .rejected { color: var(--red); }
+    /* Audio remote: kecil tapi tidak display:none */
+    #remoteAudio {
+      position: fixed;
+      right: 8px;
+      bottom: 8px;
+      width: 120px;
+      height: 32px;
+      opacity: 0.85;
+      z-index: 15;
+    }
+    .hidden { display: none !important; }
+    #btnUnmute {
+      position: fixed;
+      left: 50%;
+      bottom: 1.2rem;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: var(--amber);
+      color: #1a1208;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .stage {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 260px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #0a100e;
+      border: 1px solid var(--line);
+    }
+    #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: #0a100e; }
+    #localVideo {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 28%;
+      max-width: 110px;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.35);
+      transform: scaleX(-1);
+      z-index: 2;
+      background: #16211c;
+    }
+    #ringOverlay {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #0e1512;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.85rem; padding: 1.5rem; text-align: center;
+    }
+    #ringOverlay.hidden { display: none !important; }
+    #ringOverlay .banner {
+      color: var(--amber);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="ringOverlay" class="hidden">
+    <div class="avatar ring" id="ringAvatar">?</div>
+    <div class="banner">PANGGILAN MASUK</div>
+    <div class="title" id="ringName">Teman</div>
+    <div class="actions">
+      <button class="btn-call" type="button" id="btnAcceptRing">Angkat</button>
+      <button class="btn-hang" type="button" id="btnRejectRing">Tolak</button>
+    </div>
+  </div>
+  <div class="phone">
+    <div class="top">
+      <span><a href="./demo">Chat</a> · <a href="./demo2">Suara</a> · <a href="./demo4">AI</a></span>
+      <span id="netLabel">Offline</span>
+    </div>
+    <h1>Video Call v__NX_BUILD__</h1>
+
+    <!-- Setup / login — sama seperti demo2 -->
+    <div class="screen" id="viewSetup">
+      <div class="setup">
+        <p class="hint" style="text-align:left; margin:0 0 0.4rem;">
+          <b>Cara pakai (sama Telepon):</b> 2 HP → Masuk → satu tekan Video call → yang lain Angkat.<br />
+          Alamat: <code id="lanHint">https://IP-PC:7080/v1/demo3</code>
+        </p>
+        <p class="hint" id="secureWarn" style="text-align:left; color:#e0a35a; display:none; margin:0 0 0.5rem;">
+          <b>Salah protokol: kamu di HTTP</b> — lawan di HTTPS tidak akan dapat panggilanmu.<br />
+          Buka ulang dengan <b>https://</b> (huruf s). Contoh:
+          <code>https://192.168.100.81:7080/v1/demo3</code><br />
+          Chrome: Advanced → Proceed. “Not secure” di HTTPS self-signed = normal.
+        </p>
+        <label for="token">Token gateway</label>
+        <input id="token" placeholder="Dari: nxsocket gateway info" />
+        <label for="name">Nama kamu</label>
+        <input id="name" value="Aku" />
+        <label for="friend">Nama teman (untuk ditampilkan)</label>
+        <input id="friend" value="Teman" />
+        <label for="room">ID ruang (harus sama)</label>
+        <input id="room" value="teman-1" />
+        <div class="actions">
+          <button class="btn-call" id="btnReady" type="button">Masuk</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Idle: siap menelepon -->
+    <div class="screen hidden" id="viewIdle">
+      <div class="avatar" id="idleAvatar">?</div>
+      <div class="title" id="idleName">Teman</div>
+      <div class="subtitle">Siap dihubungi</div>
+      <p class="hint" id="peerStatus" style="color:#e0a35a;font-weight:700;">Di room: …</p>
+      <div class="actions">
+        <button class="btn-call" id="btnCall" type="button">Video call</button>
+        <button class="btn-ghost" id="btnInvite" type="button">Salin undangan</button>
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+      <p class="hint" id="iceLabel">ICE: menunggu server…</p>
+      <p class="hint">
+        Sama seperti Telepon (demo2): kedua HP Masuk (room sama), lalu tekan Video call.<br />
+        HP lawan langsung muncul <b>Angkat</b>.
+      </p>
+      <div class="call-hist" id="callHistBox">
+        <h2>
+          <span>Riwayat</span>
+          <button class="btn-ghost" id="btnClearHist" type="button">Hapus</button>
+        </h2>
+        <ul id="callHistList"></ul>
+        <p class="empty" id="callHistEmpty">Belum ada panggilan</p>
+      </div>
+    </div>
+
+    <!-- Outgoing -->
+    <div class="screen hidden" id="viewOutgoing">
+      <div class="avatar ring" id="outAvatar">?</div>
+      <div class="title" id="outName">Teman</div>
+      <div class="subtitle" id="outSub">Memanggil…</div>
+      <div class="actions">
+        <button class="btn-hang" id="btnCancel" type="button">Batalkan</button>
+      </div>
+    </div>
+
+    <!-- Incoming -->
+    <div class="screen hidden" id="viewIncoming">
+      <div class="avatar ring" id="inAvatar">?</div>
+      <div class="title" id="inName">Teman</div>
+      <div class="subtitle">Panggilan masuk</div>
+      <div class="actions">
+        <button class="btn-call" id="btnAccept" type="button">Angkat</button>
+        <button class="btn-hang" id="btnReject" type="button">Tolak</button>
+      </div>
+    </div>
+
+    <!-- In call + video -->
+    <div class="screen hidden" id="viewTalk">
+      <div class="stage">
+        <video id="remoteVideo" autoplay playsinline webkit-playsinline></video>
+        <video id="localVideo" autoplay muted playsinline webkit-playsinline></video>
+      </div>
+      <div class="title" id="talkName">Teman</div>
+      <div class="subtitle" id="talkTimer">00:00</div>
+      <p class="hint" id="mediaHint">Menghubungkan…</p>
+      <div class="actions">
+        <button class="btn-ghost" id="btnMute" type="button">Mute mic</button>
+        <button class="btn-ghost" id="btnCam" type="button">Cam off</button>
+        <button class="btn-ghost" id="btnFlip" type="button">Ganti cam</button>
+        <button class="btn-ghost" id="btnPip" type="button">PiP</button>
+        <button class="btn-ghost" id="btnRec" type="button">Rekam</button>
+        <button class="btn-call" id="btnSpeaker" type="button">Suara lawan</button>
+        <button class="btn-hang" id="btnHang" type="button">Tutup</button>
+      </div>
+      <p class="hint">Pantulan suara: pakai <b>earphone</b>, jauhkan 2 HP, atau Mute mic saat lawan bicara.</p>
+    </div>
+  </div>
+  <audio id="remoteAudio" autoplay playsinline webkit-playsinline></audio>
+  <button class="hidden" id="btnUnmute" type="button">Aktifkan suara</button>
+
+  <script>
+    // WAJIB sama protokol: http + https = panggilan tidak sampai
+    if (location.protocol === "http:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      location.replace("https://" + location.host + location.pathname + location.search + location.hash);
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo3\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let sessionId = null;
+    let myName = "Aku";
+    let friendName = "Teman";
+    let pc = null;
+    let localStream = null;
+    let remoteStream = null;
+    let pendingOffer = null;
+    let pendingFrom = null;
+    let callStartedAt = null;
+    let timerId = null;
+    let statsId = null;
+    let ringingAudio = null;
+    let ringCtx = null;
+    let iceQueue = [];
+    let audioCtx = null;
+    let remoteNode = null;
+    let disconnectTimer = null;
+    let micMuted = false;
+    let camOff = false;
+    let ringAckWaiter = null;
+    let roomPeerCount = 0;
+    let incomingAlerted = false;
+    let joinedWaiter = null;
+    let callActive = false;
+    let ignoreInviteUntil = 0;
+    let intentionalClose = false;
+    let reconnectTimer = null;
+    let reconnectAttempt = 0;
+    let facingMode = "user";
+    let ringTitleTimer = null;
+    const baseTitle = "NxSocket — Video Call";
+    const HIST_KEY = "nxsocket-call-history-video";
+    const HIST_MAX = 30;
+    let callLog = null;
+
+    function loadCallHistory() {
+      try {
+        const raw = localStorage.getItem(HIST_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCallHistory(list) {
+      try {
+        localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, HIST_MAX)));
+      } catch { /* */ }
+    }
+
+    function outcomeLabel(o) {
+      if (o === "ended" || o === "answered") return "selesai";
+      if (o === "missed") return "terlewat";
+      if (o === "rejected") return "ditolak";
+      if (o === "cancelled") return "dibatalkan";
+      return o || "?";
+    }
+
+    function formatHistTime(iso) {
+      try {
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mi = String(d.getMinutes()).padStart(2, "0");
+        return `${dd}/${mm} ${hh}:${mi}`;
+      } catch {
+        return "";
+      }
+    }
+
+    function renderCallHistory() {
+      const list = loadCallHistory();
+      const ul = $("callHistList");
+      const empty = $("callHistEmpty");
+      if (!ul || !empty) return;
+      ul.innerHTML = "";
+      if (!list.length) {
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+      for (const e of list) {
+        const li = document.createElement("li");
+        const dir = e.direction === "in" ? "←" : "→";
+        const cls =
+          e.outcome === "missed" || e.outcome === "rejected"
+            ? e.outcome
+            : e.direction === "out"
+              ? "out"
+              : "";
+        const dur =
+          typeof e.durationSec === "number" && e.durationSec > 0
+            ? ` · ${Math.floor(e.durationSec / 60)}:${String(e.durationSec % 60).padStart(2, "0")}`
+            : "";
+        li.innerHTML =
+          `<span class="${cls}">${dir} ${e.peer || "?"} · ${outcomeLabel(e.outcome)}${dur}</span>` +
+          `<span class="meta">${formatHistTime(e.at)}</span>`;
+        ul.appendChild(li);
+      }
+    }
+
+    function beginCallLog(direction, peer) {
+      callLog = {
+        direction,
+        peer: peer || friendName || "Teman",
+        connected: false,
+        connectedAt: null,
+        settled: false,
+      };
+    }
+
+    function markCallConnected() {
+      if (!callLog || callLog.settled || callLog.connected) return;
+      callLog.connected = true;
+      callLog.connectedAt = Date.now();
+    }
+
+    function settleCallLog(outcome) {
+      if (!callLog || callLog.settled) return;
+      callLog.settled = true;
+      let durationSec = 0;
+      if (callLog.connected && callLog.connectedAt) {
+        durationSec = Math.max(0, Math.floor((Date.now() - callLog.connectedAt) / 1000));
+      }
+      const entry = {
+        id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 7),
+        at: new Date().toISOString(),
+        peer: callLog.peer,
+        direction: callLog.direction,
+        outcome: outcome || (callLog.connected ? "ended" : callLog.direction === "in" ? "missed" : "cancelled"),
+        durationSec: callLog.connected ? durationSec : undefined,
+        room: room(),
+      };
+      if (entry.outcome === "answered") entry.outcome = "ended";
+      const list = loadCallHistory();
+      list.unshift(entry);
+      saveCallHistory(list);
+      callLog = null;
+      renderCallHistory();
+    }
+
+    function finalizeCallLog() {
+      if (!callLog || callLog.settled) return;
+      if (callLog.connected) settleCallLog("ended");
+      else if (callLog.direction === "in") settleCallLog("missed");
+      else settleCallLog("cancelled");
+    }
+
+    function startRingAlert(who) {
+      document.title = "📞 " + (who || "Panggilan");
+      clearInterval(ringTitleTimer);
+      let flip = false;
+      ringTitleTimer = setInterval(() => {
+        flip = !flip;
+        document.title = flip ? "📞 Panggilan masuk" : baseTitle;
+      }, 900);
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+          new Notification("Panggilan masuk", {
+            body: (who || "Teman") + " video call via NxSocket",
+            tag: "nxsocket-call",
+          });
+        }
+      } catch { /* */ }
+    }
+
+    function stopRingAlert() {
+      clearInterval(ringTitleTimer);
+      ringTitleTimer = null;
+      document.title = baseTitle;
+    }
+
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recording = false;
+
+    function mixCallStream() {
+      const out = new MediaStream();
+      // Satu track video: utamakan remote (yang ditonton), fallback lokal
+      if (remoteStream) {
+        for (const t of remoteStream.getVideoTracks()) {
+          out.addTrack(t);
+          break;
+        }
+      }
+      if (!out.getVideoTracks().length && localStream) {
+        for (const t of localStream.getVideoTracks()) {
+          out.addTrack(t);
+          break;
+        }
+      }
+      if (localStream) {
+        for (const t of localStream.getAudioTracks()) out.addTrack(t);
+      }
+      if (remoteStream) {
+        for (const t of remoteStream.getAudioTracks()) out.addTrack(t);
+      }
+      return out;
+    }
+
+    function setRecUi(on) {
+      recording = on;
+      const b = $("btnRec");
+      if (b) b.textContent = on ? "Stop rekam" : "Rekam";
+    }
+
+    function startRecording() {
+      if (recording || mediaRecorder) return;
+      const stream = mixCallStream();
+      if (!stream.getTracks().length) {
+        setMediaHint("Belum ada media untuk direkam");
+        return;
+      }
+      recordedChunks = [];
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
+        ? "video/webm;codecs=vp8,opus"
+        : MediaRecorder.isTypeSupported("video/webm")
+          ? "video/webm"
+          : "audio/webm";
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+      } catch {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) recordedChunks.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        setRecUi(false);
+        if (!recordedChunks.length) return;
+        const blob = new Blob(recordedChunks, { type: recordedChunks[0].type || "video/webm" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "nxsocket-video-" + Date.now() + ".webm";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        setMediaHint("Rekaman disimpan");
+        mediaRecorder = null;
+        recordedChunks = [];
+      };
+      mediaRecorder.start(1000);
+      setRecUi(true);
+      setMediaHint("Merekam panggilan…");
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        try { mediaRecorder.stop(); } catch { /* */ }
+      } else {
+        setRecUi(false);
+        mediaRecorder = null;
+      }
+    }
+
+    // Default STUN; diganti ice.config dari server
+    let iceServers = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ];
+
+    function applyIceConfig(msg) {
+      if (Array.isArray(msg.iceServers) && msg.iceServers.length) {
+        iceServers = msg.iceServers;
+      }
+      const el = $("iceLabel");
+      if (el) el.textContent = msg.label || ("ICE: " + iceServers.length + " server");
+    }
+
+    const ID_KEY = "nxsocket_demo3_identity";
+
+    function loadLocalIdentity() {
+      try {
+        const raw = localStorage.getItem(ID_KEY);
+        if (!raw) return;
+        const o = JSON.parse(raw);
+        if (o.token && !$("token").value) $("token").value = o.token;
+        if (o.name) $("name").value = o.name;
+        if (o.friend) $("friend").value = o.friend;
+        if (o.room) $("room").value = o.room;
+      } catch { /* */ }
+    }
+
+    function saveLocalIdentity() {
+      try {
+        localStorage.setItem(
+          ID_KEY,
+          JSON.stringify({
+            token: $("token").value.trim(),
+            name: $("name").value.trim() || "Aku",
+            friend: $("friend").value.trim() || "Teman",
+            room: $("room").value.trim() || "teman-1",
+          }),
+        );
+      } catch { /* */ }
+    }
+
+    function applyProfileHint(msg) {
+      const q = new URLSearchParams(location.search);
+      if (msg.name && !q.get("name")) {
+        const cur = $("name").value.trim();
+        if (!cur || cur === "Aku") {
+          $("name").value = msg.name;
+          myName = msg.name;
+          if (ws?.readyState === WebSocket.OPEN) send({ type: "identify", name: myName });
+        }
+      }
+      if (msg.lastRoom && !q.get("room")) {
+        const cur = $("room").value.trim();
+        if (!cur || cur === "teman-1") {
+          $("room").value = msg.lastRoom;
+          if (ws?.readyState === WebSocket.OPEN) send({ type: "join", room: msg.lastRoom });
+        }
+      }
+      saveLocalIdentity();
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(base64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    }
+
+    async function registerWebPush(publicKey) {
+      if (!publicKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+      if (!window.isSecureContext) return;
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "default") {
+          await Notification.requestPermission();
+        }
+        if (typeof Notification !== "undefined" && Notification.permission !== "granted") return;
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+        }
+        const json = sub.toJSON();
+        if (!json.endpoint || !json.keys) return;
+        send({
+          type: "push.subscribe",
+          subscription: json,
+          rooms: [room()],
+          page: "demo3",
+        });
+        const ice = $("iceLabel");
+        if (ice && !/Push/.test(ice.textContent || "")) {
+          ice.textContent = (ice.textContent || "") + " · Push ON";
+        }
+      } catch (err) {
+        console.warn("[push]", err);
+      }
+    }
+
+    function isInCallUi() {
+      return ["viewOutgoing", "viewIncoming", "viewTalk"].some(
+        (id) => !$(id).classList.contains("hidden"),
+      ) || !$("ringOverlay").classList.contains("hidden");
+    }
+
+    function inviteUrl() {
+      const u = new URL(location.href);
+      u.searchParams.set("token", $("token").value.trim());
+      u.searchParams.set("name", $("friend").value.trim() || "Teman");
+      u.searchParams.set("friend", myName);
+      u.searchParams.set("room", room());
+      return u.toString();
+    }
+
+    function scheduleReconnect() {
+      if (intentionalClose) return;
+      $("netLabel").textContent = "Offline";
+      setMediaHint("Offline — menyambung ulang signaling…");
+      const delay = Math.min(10000, 800 * Math.pow(1.6, reconnectAttempt++));
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => connectWs(), delay);
+    }
+
+    function connectWs() {
+      const token = $("token").value.trim();
+      if (!token) return;
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        try { ws.close(); } catch { /* */ }
+      }
+      ws = new WebSocket(`${toWs(hostBase)}?token=${encodeURIComponent(token)}`);
+      ws.onopen = () => {
+        $("netLabel").textContent = "Online";
+        reconnectAttempt = 0;
+      };
+      ws.onclose = () => {
+        if (intentionalClose) {
+          $("netLabel").textContent = "Offline";
+          endCall(false);
+          show("viewSetup");
+          return;
+        }
+        if (isInCallUi() || callActive) {
+          scheduleReconnect();
+          return;
+        }
+        $("netLabel").textContent = "Offline";
+        endCall(false);
+        show("viewSetup");
+      };
+      ws.onerror = () => { /* onclose */ };
+      ws.onmessage = async (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          sessionId = msg.sessionId;
+          send({ type: "identify", name: myName });
+          send({ type: "join", room: room() });
+          if (!isInCallUi()) show("viewIdle");
+          else setMediaHint("Signaling tersambung lagi");
+        } else if (msg.type === "profile.hint") {
+          applyProfileHint(msg);
+        } else if (msg.type === "ice.config") {
+          applyIceConfig(msg);
+        } else if (msg.type === "push.vapid") {
+          if (msg.enabled && msg.publicKey) void registerWebPush(msg.publicKey);
+        } else if (msg.type === "joined") {
+          roomPeerCount = msg.peers || 1;
+          setPeerStatus(roomPeerCount);
+          if (typeof joinedWaiter === "function") joinedWaiter(roomPeerCount);
+        } else if (msg.type === "event" && msg.event === "room.peers") {
+          roomPeerCount =
+            msg.data && msg.data.peers != null ? msg.data.peers : roomPeerCount;
+          setPeerStatus(roomPeerCount);
+        } else if (msg.type === "call.incoming") {
+          if (callActive) return;
+          if (msg.from && sessionId && msg.from === sessionId) return;
+          pendingFrom = msg.from;
+          showIncoming(msg.name || friendName);
+        } else if (msg.type === "call.ringing") {
+          if (typeof ringAckWaiter === "function") ringAckWaiter(msg.peers || 0);
+          if (!callActive && $("outSub")) {
+            $("outSub").textContent =
+              msg.peers > 0
+                ? `Menunggu Angkat… (${msg.peers} HP)`
+                : "Gagal: tidak ada HP lain Online";
+          }
+        } else if (msg.type === "event" && msg.event === "call.invite") {
+          if (callActive) return;
+          if (msg.from && sessionId && msg.from === sessionId) return;
+          pendingFrom = msg.from;
+          showIncoming((msg.data && msg.data.name) || friendName);
+        } else if (msg.type === "error") {
+          console.warn(msg);
+          const text = msg.message || msg.code || "Error";
+          if (msg.code === "forbidden") alert(text);
+          if ($("outSub")) $("outSub").textContent = text;
+          if (msg.code === "no_peer" || /tidak ada HP|Online/i.test(text)) {
+            beepRing(false);
+            show("viewIdle");
+          }
+        } else if (msg.type === "webrtc.signal") {
+          try {
+            await onSignal(msg);
+          } catch (err) {
+            console.error(err);
+            setMediaHint(err.message || "Signal gagal");
+          }
+        }
+      };
+    }
+
+    function initials(name) {
+      return (name || "?").trim().slice(0, 1).toUpperCase();
+    }
+
+    function room() {
+      return $("room").value.trim() || "teman-1";
+    }
+
+    function show(view) {
+      for (const id of ["viewSetup", "viewIdle", "viewOutgoing", "viewIncoming", "viewTalk"]) {
+        $(id).classList.toggle("hidden", id !== view);
+      }
+      if (view === "viewIdle") renderCallHistory();
+    }
+
+    function setFriendLabels() {
+      friendName = $("friend").value.trim() || "Teman";
+      for (const id of ["idleName", "outName", "inName", "talkName", "ringName"]) {
+        const el = $(id);
+        if (el) el.textContent = friendName;
+      }
+      for (const id of ["idleAvatar", "outAvatar", "inAvatar", "ringAvatar"]) {
+        const el = $(id);
+        if (el) el.textContent = initials(friendName);
+      }
+    }
+
+    function setPeerStatus(count) {
+      roomPeerCount = count;
+      const el = $("peerStatus");
+      if (!el) return;
+      if (count >= 2) {
+        el.style.color = "#2fbf71";
+        el.textContent = "Di room: " + count + " ✓ boleh menelepon";
+      } else {
+        el.style.color = "#e0a35a";
+        el.textContent = "Di room: " + count + " — tunggu lawan Masuk (room sama)";
+      }
+    }
+
+    function hideRing() {
+      const ov = $("ringOverlay");
+      if (ov) ov.classList.add("hidden");
+    }
+
+    function showIncoming(who) {
+      if (callActive) return;
+      if (Date.now() < ignoreInviteUntil) return;
+      const name = who || friendName || "Teman";
+      try {
+        $("friend").value = name;
+      } catch { /* ignore */ }
+      setFriendLabels();
+      beginCallLog("in", name);
+      show("viewIncoming");
+      const ov = $("ringOverlay");
+      if (ov) ov.classList.remove("hidden");
+      $("netLabel").textContent = "Panggilan!";
+      document.title = "Panggilan masuk";
+      beepRing(true);
+      startRingAlert(name);
+      try { navigator.vibrate?.([400, 100, 400, 100, 600]); } catch { /* ignore */ }
+      if (!incomingAlerted) {
+        incomingAlerted = true;
+        setTimeout(() => {
+          try {
+            alert("TELEPON MASUK dari " + name + "\n\nKetuk OK, lalu tekan ANGKAT.");
+          } catch { /* ignore */ }
+        }, 50);
+      }
+    }
+
+    function enterTalkUi() {
+      callActive = true;
+      hideRing();
+      stopRingAlert();
+      beepRing(false);
+      incomingAlerted = true;
+      $("netLabel").textContent = "Online";
+      document.title = baseTitle;
+      show("viewTalk");
+    }
+
+    function waitRingAck(ms) {
+      return new Promise((resolve) => {
+        const t = setTimeout(() => {
+          if (ringAckWaiter === resolve) ringAckWaiter = null;
+          resolve(null);
+        }, ms);
+        ringAckWaiter = (peers) => {
+          clearTimeout(t);
+          ringAckWaiter = null;
+          resolve(peers);
+        };
+      });
+    }
+
+    function waitJoined(ms) {
+      return new Promise((resolve) => {
+        const t = setTimeout(() => {
+          if (joinedWaiter === resolve) joinedWaiter = null;
+          resolve(roomPeerCount);
+        }, ms);
+        joinedWaiter = (peers) => {
+          clearTimeout(t);
+          joinedWaiter = null;
+          resolve(peers);
+        };
+      });
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMediaHint(text) {
+      const el = $("mediaHint");
+      if (el) el.textContent = text;
+    }
+
+    function startTimer() {
+      callStartedAt = Date.now();
+      markCallConnected();
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        const s = Math.floor((Date.now() - callStartedAt) / 1000);
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        $("talkTimer").textContent = `${mm}:${ss}`;
+      }, 500);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      $("talkTimer").textContent = "00:00";
+    }
+
+    function startStats() {
+      clearInterval(statsId);
+      statsId = setInterval(async () => {
+        if (!pc) return;
+        try {
+          const stats = await pc.getStats();
+          let audioOk = false;
+          let videoOk = false;
+          stats.forEach((r) => {
+            if (r.type !== "inbound-rtp") return;
+            const kind = r.kind || r.mediaType;
+            if (kind === "audio" && (r.packetsReceived || 0) > 0) audioOk = true;
+            if (kind === "video" && (r.packetsReceived || 0) > 0) videoOk = true;
+          });
+          const ice = pc.iceConnectionState;
+          if (audioOk || videoOk) {
+            setMediaHint(
+              (videoOk ? "Video" : "Tanpa video") +
+                " · " +
+                (audioOk ? "suara OK" : "ketuk Suara lawan") +
+                " · ICE " +
+                ice,
+            );
+          } else {
+            setMediaHint(`Menghubungkan media · ICE ${ice}`);
+          }
+        } catch {
+          /* ignore */
+        }
+      }, 1000);
+    }
+
+    function stopStats() {
+      clearInterval(statsId);
+      statsId = null;
+    }
+
+    function beepRing(on) {
+      if (!on) {
+        if (ringingAudio) {
+          clearInterval(ringingAudio);
+          ringingAudio = null;
+        }
+        if (ringCtx) {
+          void ringCtx.close().catch(() => {});
+          ringCtx = null;
+        }
+        return;
+      }
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      ringCtx = new Ctx();
+      ringingAudio = setInterval(() => {
+        if (!ringCtx) return;
+        if (ringCtx.state === "suspended") void ringCtx.resume();
+        const o = ringCtx.createOscillator();
+        const g = ringCtx.createGain();
+        o.frequency.value = 880;
+        g.gain.value = 0.03;
+        o.connect(g);
+        g.connect(ringCtx.destination);
+        o.start();
+        setTimeout(() => {
+          try { o.stop(); } catch { /* ignore */ }
+        }, 160);
+      }, 900);
+    }
+
+    async function unlockAudio() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        if (!audioCtx || audioCtx.state === "closed") audioCtx = new Ctx();
+        if (audioCtx.state === "suspended") await audioCtx.resume();
+      }
+      const el = $("remoteAudio");
+      el.muted = false;
+      el.volume = 1;
+      try {
+        await el.play();
+      } catch {
+        /* tombol Suara lawan */
+      }
+    }
+
+    async function playRemote() {
+      const el = $("remoteAudio");
+      const rv = $("remoteVideo");
+      if (remoteStream) {
+        el.srcObject = remoteStream;
+        if (rv) {
+          rv.srcObject = remoteStream;
+          // Video hanya gambar — suara HANYA lewat <audio> (hindari suara dobel/echo)
+          rv.muted = true;
+        }
+      }
+      el.muted = false;
+      el.volume = 0.85;
+      await unlockAudio();
+
+      try {
+        await el.play();
+        if (rv) await rv.play().catch(() => {});
+        $("btnUnmute").classList.add("hidden");
+      } catch {
+        if (audioCtx && remoteStream && audioCtx.state === "running") {
+          try {
+            if (remoteNode) {
+              try { remoteNode.disconnect(); } catch { /* ignore */ }
+              remoteNode = null;
+            }
+            remoteNode = audioCtx.createMediaStreamSource(remoteStream);
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.85;
+            remoteNode.connect(gain);
+            gain.connect(audioCtx.destination);
+            $("btnUnmute").classList.add("hidden");
+            return;
+          } catch (err) {
+            console.warn("webrtc audio graph", err);
+          }
+        }
+        $("btnUnmute").classList.remove("hidden");
+        setMediaHint("Ketuk «Suara lawan» / «Aktifkan suara»");
+      }
+    }
+
+    function attachRemoteTrack(track) {
+      if (!track) return;
+      track.enabled = true;
+      if (!remoteStream) remoteStream = new MediaStream();
+      const exists = remoteStream.getTracks().some((t) => t.id === track.id);
+      if (!exists) remoteStream.addTrack(track);
+      $("remoteAudio").srcObject = remoteStream;
+      const rv = $("remoteVideo");
+      if (rv) {
+        rv.srcObject = remoteStream;
+        rv.muted = true;
+      }
+      void playRemote();
+    }
+
+    async function flushIce() {
+      if (!pc || !pc.remoteDescription) return;
+      const queued = iceQueue.splice(0);
+      for (const candidate of queued) {
+        try {
+          await pc.addIceCandidate(candidate);
+        } catch {
+          /* ignore stale */
+        }
+      }
+    }
+
+    async function addRemoteIce(candidate) {
+      if (!candidate) return;
+      if (!pc || !pc.remoteDescription) {
+        iceQueue.push(candidate);
+        return;
+      }
+      try {
+        await pc.addIceCandidate(candidate);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    async function ensureMic() {
+      if (localStream) {
+        const lv0 = $("localVideo");
+        if (lv0) {
+          lv0.srcObject = localStream;
+          lv0.muted = true;
+          void lv0.play().catch(() => {});
+        }
+        return localStream;
+      }
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Kamera/mic diblokir: buka lewat HTTPS.\n\nnxsocket server --https\nlalu https://IP:7080/v1/demo3",
+        );
+      }
+      const audioConstraints = {
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+        googEchoCancellation: true,
+        googNoiseSuppression: true,
+        googAutoGainControl: true,
+        googHighpassFilter: true,
+        googTypingNoiseDetection: true,
+      };
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: audioConstraints,
+          video: { facingMode: { ideal: facingMode } },
+        });
+      } catch {
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: audioConstraints,
+            video: true,
+          });
+        } catch {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: audioConstraints,
+            video: false,
+          });
+          alert("Kamera ditolak/tidak ada — lanjut suara saja.");
+        }
+      }
+      for (const t of localStream.getAudioTracks()) {
+        t.enabled = !micMuted;
+        try {
+          await t.applyConstraints({
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          });
+        } catch {
+          /* ignore */
+        }
+      }
+      for (const t of localStream.getVideoTracks()) t.enabled = !camOff;
+      const lv = $("localVideo");
+      if (lv) {
+        lv.srcObject = localStream;
+        lv.muted = true;
+        void lv.play().catch(() => {});
+      }
+      return localStream;
+    }
+
+    function setMicMuted(muted) {
+      micMuted = muted;
+      if (localStream) {
+        for (const t of localStream.getAudioTracks()) t.enabled = !muted;
+      }
+      const btn = $("btnMute");
+      if (btn) btn.textContent = muted ? "Unmute mic" : "Mute mic";
+    }
+
+    function setCamOff(off) {
+      camOff = off;
+      if (localStream) {
+        for (const t of localStream.getVideoTracks()) t.enabled = !off;
+      }
+      const btn = $("btnCam");
+      if (btn) btn.textContent = off ? "Cam on" : "Cam off";
+    }
+
+    async function flipCamera() {
+      if (!localStream || !pc) {
+        setMediaHint("Flip cam hanya saat panggilan aktif");
+        return;
+      }
+      facingMode = facingMode === "user" ? "environment" : "user";
+      try {
+        const next = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: facingMode } },
+        });
+        const newTrack = next.getVideoTracks()[0];
+        const oldTrack = localStream.getVideoTracks()[0];
+        const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+        if (sender && newTrack) await sender.replaceTrack(newTrack);
+        if (oldTrack) {
+          localStream.removeTrack(oldTrack);
+          oldTrack.stop();
+        }
+        if (newTrack) localStream.addTrack(newTrack);
+        for (const t of next.getAudioTracks()) t.stop();
+        const lv = $("localVideo");
+        if (lv) {
+          lv.srcObject = localStream;
+          void lv.play().catch(() => {});
+        }
+        if (camOff && newTrack) newTrack.enabled = false;
+        setMediaHint(facingMode === "user" ? "Kamera depan" : "Kamera belakang");
+      } catch (err) {
+        setMediaHint(err.message || "Gagal ganti kamera");
+        facingMode = facingMode === "user" ? "environment" : "user";
+      }
+    }
+
+    function wirePc(peer) {
+      peer.onicecandidate = (ev) => {
+        if (!ev.candidate) return;
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          payload: {
+            candidate: ev.candidate.toJSON ? ev.candidate.toJSON() : ev.candidate,
+            name: myName,
+          },
+        });
+      };
+      peer.ontrack = (ev) => {
+        if (ev.track) attachRemoteTrack(ev.track);
+        if (ev.streams?.[0]) {
+          for (const t of ev.streams[0].getTracks()) attachRemoteTrack(t);
+        }
+      };
+      peer.onconnectionstatechange = () => {
+        const st = peer.connectionState;
+        if (st === "failed" || st === "closed") {
+          if (st === "failed") setMediaHint("Koneksi media gagal");
+          endCall(false);
+        } else if (st === "disconnected") {
+          clearTimeout(disconnectTimer);
+          disconnectTimer = setTimeout(() => {
+            if (pc && pc.connectionState === "disconnected") {
+              setMediaHint("Koneksi terputus");
+              endCall(false);
+            }
+          }, 4000);
+        } else if (st === "connected") {
+          clearTimeout(disconnectTimer);
+          enterTalkUi();
+          startTimer();
+          startStats();
+          void playRemote();
+        } else if (st === "connecting") {
+          setMediaHint("Menghubungkan…");
+        }
+      };
+      peer.oniceconnectionstatechange = () => {
+        const st = peer.iceConnectionState;
+        if (st === "failed") setMediaHint("ICE gagal — pastikan 2 HP WiFi sama");
+        if (st === "connected" || st === "completed") void playRemote();
+      };
+    }
+
+    async function ensurePc() {
+      if (pc) return pc;
+      pc = new RTCPeerConnection({
+        iceServers,
+        iceCandidatePoolSize: 4,
+      });
+      wirePc(pc);
+      return pc;
+    }
+
+    async function attachLocalMedia(peer) {
+      const media = await ensureMic();
+      for (const track of media.getTracks()) {
+        const byKind = peer.getTransceivers().find((t) => t.receiver?.track?.kind === track.kind);
+        if (byKind?.sender) {
+          try {
+            await byKind.sender.replaceTrack(track);
+            try { byKind.direction = "sendrecv"; } catch { /* ignore */ }
+            continue;
+          } catch {
+            /* fall through */
+          }
+        }
+        const sender = peer.getSenders().find((s) => s.track?.kind === track.kind);
+        if (sender) {
+          try {
+            await sender.replaceTrack(track);
+            continue;
+          } catch {
+            /* fall through */
+          }
+        }
+        peer.addTrack(track, media);
+      }
+      const lv = $("localVideo");
+      if (lv) {
+        lv.srcObject = media;
+        lv.muted = true;
+        void lv.play().catch(() => {});
+      }
+      return media;
+    }
+
+    async function placeCall() {
+      // Alur: RING dulu (langsung), baru WebRTC. Jangan biarkan kamera/audio menahan sinyal.
+      if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+        alert(
+          "Kamu masih di HTTP.\nLawan harus HTTPS yang sama.\n\nBuka:\nhttps://" +
+            location.host +
+            "/v1/demo3",
+        );
+        location.replace("https://" + location.host + location.pathname + location.search);
+        return;
+      }
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("Belum Online. Ketuk Masuk dulu.");
+        return;
+      }
+
+      setFriendLabels();
+      beginCallLog("out", friendName);
+      show("viewOutgoing");
+      $("outSub").textContent = "Memanggil…";
+      beepRing(true);
+      send({ type: "join", room: room() });
+
+      // 1) KIRIM PANGGILAN SEKARANG — sebelum audio/kamera/WebRTC
+      send({ type: "call.ring", room: room(), mode: "video", name: myName });
+      $("outSub").textContent = "Menunggu Angkat…";
+
+      iceQueue = [];
+      remoteStream = null;
+      void unlockAudio().catch(() => {});
+
+      try {
+        if (pc) {
+          try { pc.close(); } catch { /* ignore */ }
+          pc = null;
+        }
+        const peer = await ensurePc();
+        peer.addTransceiver("audio", { direction: "sendrecv" });
+        peer.addTransceiver("video", { direction: "sendrecv" });
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "offer",
+          payload: { sdp: peer.localDescription, name: myName },
+        });
+
+        try {
+          await attachLocalMedia(peer);
+        } catch (e) {
+          console.warn(e);
+          $("outSub").textContent = "Menunggu Angkat (izinkan kamera jika diminta)";
+        }
+      } catch (e) {
+        console.error(e);
+        $("outSub").textContent = "Menunggu Angkat (sinyal media gagal — lawan tetap harus dapat panggilan)";
+      }
+    }
+
+    async function acceptCall() {
+      // Stop dering SEGERA — jangan tunggu kamera
+      beepRing(false);
+      hideRing();
+      callActive = true;
+      $("netLabel").textContent = "Online";
+      document.title = "NxSocket — Video Call";
+
+      if (!pendingOffer) {
+        for (let i = 0; i < 40 && !pendingOffer; i++) {
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      }
+      if (!pendingOffer) {
+        callActive = false;
+        alert("Belum ada sinyal panggilan. Minta lawan tekan Video call lagi.");
+        show("viewIdle");
+        return;
+      }
+
+      setFriendLabels();
+      if (!callLog) beginCallLog("in", friendName);
+      enterTalkUi();
+      setMediaHint("Membuka kamera/mic…");
+
+      let media;
+      try {
+        media = await ensureMic();
+      } catch (e) {
+        alert(e.message || "Gagal buka kamera/mic");
+        callActive = false;
+        endCall(true);
+        return;
+      }
+
+      setMediaHint("Menghubungkan…");
+      if (pc) {
+        try { pc.close(); } catch { /* ignore */ }
+        pc = null;
+      }
+      pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
+      wirePc(pc);
+      await pc.setRemoteDescription(pendingOffer);
+      await flushIce();
+      for (const track of media.getTracks()) {
+        pc.addTrack(track, media);
+      }
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      send({
+        type: "webrtc.signal",
+        room: room(),
+        signal: "answer",
+        payload: { sdp: pc.localDescription, name: myName },
+        to: pendingFrom || undefined,
+      });
+      send({
+        type: "webrtc.signal",
+        room: room(),
+        signal: "answer",
+        payload: { sdp: pc.localDescription, name: myName },
+      });
+      pendingOffer = null;
+      pendingFrom = null;
+      startTimer();
+      startStats();
+      void playRemote();
+    }
+
+    function rejectCall() {
+      hideRing();
+      stopRingAlert();
+      beepRing(false);
+      settleCallLog("rejected");
+      callActive = false;
+      ignoreInviteUntil = Date.now() + 2000;
+      pendingOffer = null;
+      pendingFrom = null;
+      iceQueue = [];
+      endCall(true);
+      show("viewIdle");
+    }
+
+    function endCall(notifyPeer) {
+      hideRing();
+      stopRingAlert();
+      finalizeCallLog();
+      stopRecording();
+      callActive = false;
+      incomingAlerted = false;
+      ignoreInviteUntil = Date.now() + 2500;
+      document.title = baseTitle;
+      if (ws?.readyState === WebSocket.OPEN) $("netLabel").textContent = "Online";
+      beepRing(false);
+      stopTimer();
+      stopStats();
+      clearTimeout(disconnectTimer);
+      iceQueue = [];
+      $("btnUnmute").classList.add("hidden");
+      if (remoteNode) {
+        try { remoteNode.disconnect(); } catch { /* ignore */ }
+        remoteNode = null;
+      }
+      if (pc) {
+        try { pc.close(); } catch { /* ignore */ }
+        pc = null;
+      }
+      if (localStream) {
+        for (const t of localStream.getTracks()) t.stop();
+        localStream = null;
+      }
+      remoteStream = null;
+      $("remoteAudio").srcObject = null;
+      const rv = $("remoteVideo");
+      const lv = $("localVideo");
+      if (rv) rv.srcObject = null;
+      if (lv) lv.srcObject = null;
+      micMuted = false;
+      camOff = false;
+      const muteBtn = $("btnMute");
+      if (muteBtn) muteBtn.textContent = "Mute mic";
+      const camBtn = $("btnCam");
+      if (camBtn) camBtn.textContent = "Cam off";
+      pendingOffer = null;
+      pendingFrom = null;
+      if (notifyPeer && ws?.readyState === WebSocket.OPEN) {
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          payload: { hangup: true, name: myName },
+        });
+      }
+      if (ws?.readyState === WebSocket.OPEN) show("viewIdle");
+    }
+
+    async function onSignal(msg) {
+      if (msg.from && sessionId && msg.from === sessionId) return;
+      const data = msg.payload || {};
+
+      if (data.hangup) {
+        incomingAlerted = false;
+        endCall(false);
+        show("viewIdle");
+        return;
+      }
+
+      if (msg.signal === "offer") {
+        if (callActive) return;
+        const sdp = data.sdp || data;
+        const who = data.name || friendName;
+        pendingOffer = sdp;
+        pendingFrom = msg.from;
+        showIncoming(who);
+        return;
+      }
+
+      if (msg.signal === "answer") {
+        if (!pc) return;
+        if (pc.signalingState !== "have-local-offer" && pc.remoteDescription) return;
+        const sdp = data.sdp || data;
+        await pc.setRemoteDescription(sdp);
+        await flushIce();
+        enterTalkUi();
+        setMediaHint("Menghubungkan…");
+        startTimer();
+        startStats();
+        void playRemote();
+        // Pastikan kamera pemanggil juga nyala
+        try {
+          await attachLocalMedia(pc);
+        } catch (e) {
+          console.warn(e);
+          setMediaHint("Izinkan kamera untuk kirim video");
+        }
+        return;
+      }
+
+      if (msg.signal === "ice" && data.candidate) {
+        await addRemoteIce(data.candidate);
+      }
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) {
+        alert("Tempel token dulu");
+        return;
+      }
+      myName = $("name").value.trim() || "Aku";
+      setFriendLabels();
+      saveLocalIdentity();
+      intentionalClose = false;
+      reconnectAttempt = 0;
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+      connectWs();
+    };
+
+    $("btnCall").onclick = () => placeCall().catch((e) => {
+      alert(e.message || "Tidak bisa akses kamera/mic — pakai HTTPS");
+      endCall(false);
+      show("viewIdle");
+    });
+    $("btnCancel").onclick = () => endCall(true);
+    $("btnAccept").onclick = () => acceptCall().catch((e) => {
+      alert(e.message || "Gagal angkat — pastikan pakai HTTPS");
+      endCall(false);
+      show("viewIdle");
+    });
+    $("btnAcceptRing").onclick = () => $("btnAccept").click();
+    $("btnRejectRing").onclick = () => rejectCall();
+    $("btnReject").onclick = () => rejectCall();
+    $("btnHang").onclick = () => endCall(true);
+    $("btnUnmute").onclick = () => void playRemote();
+    $("btnSpeaker").onclick = () => void playRemote();
+    $("btnMute").onclick = () => setMicMuted(!micMuted);
+    $("btnRec").onclick = () => {
+      if (recording) stopRecording();
+      else startRecording();
+    };
+    $("btnCam").onclick = () => setCamOff(!camOff);
+    $("btnFlip").onclick = () => void flipCamera();
+    $("btnPip").onclick = async () => {
+      const v = $("remoteVideo");
+      if (!v) return;
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else if (document.pictureInPictureEnabled && v.requestPictureInPicture) {
+          if (v.readyState < 2) await v.play().catch(() => {});
+          await v.requestPictureInPicture();
+        } else {
+          setMediaHint("PiP tidak didukung browser ini");
+        }
+      } catch (err) {
+        setMediaHint(err.message || "PiP gagal");
+      }
+    };
+    $("btnInvite").onclick = async () => {
+      const link = inviteUrl();
+      try {
+        await navigator.clipboard.writeText(link);
+        setMediaHint("Link undangan disalin");
+      } catch {
+        prompt("Salin undangan:", link);
+      }
+    };
+    $("btnClearHist").onclick = () => {
+      saveCallHistory([]);
+      renderCallHistory();
+    };
+    $("btnLogout").onclick = () => {
+      intentionalClose = true;
+      clearTimeout(reconnectTimer);
+      endCall(false);
+      ws?.close();
+      show("viewSetup");
+    };
+
+    const q = new URLSearchParams(location.search);
+    loadLocalIdentity();
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("friend")) $("friend").value = q.get("friend");
+    if (q.get("room")) $("room").value = q.get("room");
+
+    $("lanHint").textContent = `${location.origin}${location.pathname.replace(/\/?$/, "")}`;
+    if (!window.isSecureContext || location.protocol === "http:") {
+      $("secureWarn").style.display = "block";
+      $("btnReady").onclick = () => {
+        alert("Harus HTTPS dulu. Halaman akan dialihkan.");
+        location.replace("https://" + location.host + location.pathname + location.search);
+      };
+    }
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

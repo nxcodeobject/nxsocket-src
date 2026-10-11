@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2fbf71" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/nxsocket.svg" type="image/svg+xml" />
+  <title>NxSocket — Telepon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1512;
+      --card: #16211c;
+      --line: #2a3b33;
+      --text: #eef6f1;
+      --muted: #8aa396;
+      --green: #2fbf71;
+      --green-dark: #1f8a50;
+      --red: #e25555;
+      --amber: #e0a35a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, #1c3d30 0%, transparent 60%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 380px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.25rem 1.2rem 1.4rem;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.55rem;
+      padding: 1rem 0.4rem;
+    }
+    .avatar {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      background: #20352c;
+      border: 2px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 0.4rem;
+    }
+    .avatar.ring {
+      border-color: var(--amber);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .avatar.talk {
+      border-color: var(--green);
+      box-shadow: 0 0 0 8px color-mix(in srgb, var(--green) 16%, transparent);
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 35%, transparent); }
+      50% { box-shadow: 0 0 0 14px transparent; }
+    }
+    .title { font-size: 1.35rem; font-weight: 700; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; min-height: 1.3em; }
+    .setup { width: 100%; text-align: left; }
+    label { display: block; font-size: 0.75rem; color: var(--muted); margin: 0.45rem 0 0.2rem; }
+    input {
+      width: 100%;
+      background: #101a16;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--green-dark); }
+    .actions {
+      display: flex;
+      gap: 0.7rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+      min-height: 64px;
+      align-items: center;
+    }
+    button {
+      font: inherit;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 0.85rem 1.25rem;
+    }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-call { background: var(--green); color: #062414; min-width: 150px; }
+    .btn-hang { background: var(--red); color: #fff; min-width: 150px; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      margin-top: 0.7rem;
+      line-height: 1.35;
+    }
+    .call-hist {
+      width: 100%;
+      margin-top: 0.85rem;
+      text-align: left;
+      border-top: 1px solid var(--line);
+      padding-top: 0.65rem;
+    }
+    .call-hist h2 {
+      margin: 0 0 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .call-hist h2 button {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.25rem 0.55rem;
+      min-width: 0;
+    }
+    .call-hist ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 9.5rem;
+      overflow-y: auto;
+    }
+    .call-hist li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(42, 59, 51, 0.55);
+      color: var(--text);
+    }
+    .call-hist li span.meta { color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
+    .call-hist .empty { color: var(--muted); font-size: 0.75rem; margin: 0; }
+    .call-hist .out { color: var(--green); }
+    .call-hist .missed, .call-hist .rejected { color: var(--red); }
+    /* Audio remote: kecil tapi tidak display:none */
+    #remoteAudio {
+      position: fixed;
+      right: 8px;
+      bottom: 8px;
+      width: 120px;
+      height: 32px;
+      opacity: 0.85;
+      z-index: 15;
+    }
+    .hidden { display: none !important; }
+    #btnUnmute {
+      position: fixed;
+      left: 50%;
+      bottom: 1.2rem;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: var(--amber);
+      color: #1a1208;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo">Chat</a>
+      <span id="netLabel">Offline</span>
+    </div>
+    <h1>Telepon</h1>
+
+    <!-- Setup / login -->
+    <div class="screen" id="viewSetup">
+      <div class="setup">
+        <p class="hint" style="text-align:left; margin:0 0 0.4rem;">
+          Uji di 2 HP (WiFi sama): buka alamat <b>Jaringan</b> dari PC, bukan 127.0.0.1.
+          Contoh: <code id="lanHint">https://IP-PC:7080/v1/demo2</code>
+        </p>
+        <p class="hint" id="secureWarn" style="text-align:left; color:#e0a35a; display:none; margin:0 0 0.5rem;">
+          <b>Sekarang kamu pakai HTTP</b> — mic di HP tidak jalan.<br />
+          Stop server, jalankan <code>nxsocket server --https</code>, lalu buka
+          <b>https://</b>IP-PC:7080/v1/demo2 (bukan http). Di HP ketuk Lanjutkan / Advanced → Proceed.
+        </p>
+        <label for="token">Token gateway</label>
+        <input id="token" placeholder="Dari: nxsocket gateway info" />
+        <label for="name">Nama kamu</label>
+        <input id="name" value="Aku" />
+        <label for="friend">Nama teman (untuk ditampilkan)</label>
+        <input id="friend" value="Teman" />
+        <label for="room">ID ruang telepon (harus sama)</label>
+        <input id="room" value="teman-1" />
+        <div class="actions">
+          <button class="btn-call" id="btnReady" type="button">Masuk</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Idle: siap menelepon -->
+    <div class="screen hidden" id="viewIdle">
+      <div class="avatar" id="idleAvatar">?</div>
+      <div class="title" id="idleName">Teman</div>
+      <div class="subtitle">Siap dihubungi</div>
+      <p class="hint" id="peerStatus" style="color:#e0a35a;font-weight:700;">Di room: …</p>
+      <div class="actions">
+        <button class="btn-call" id="btnCall" type="button">Telepon / Grup</button>
+        <button class="btn-ghost" id="btnInvite" type="button">Salin undangan</button>
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+      <p class="hint" id="iceLabel">ICE: menunggu server…</p>
+      <p class="hint">1 lawan = telepon biasa. 2+ HP di room sama = <b>grup mesh</b> (max ~4).<br />Saat bicara: pakai <b>earphone</b> agar tidak echo.</p>
+      <div class="call-hist" id="callHistBox">
+        <h2>
+          <span>Riwayat</span>
+          <button class="btn-ghost" id="btnClearHist" type="button">Hapus</button>
+        </h2>
+        <ul id="callHistList"></ul>
+        <p class="empty" id="callHistEmpty">Belum ada panggilan</p>
+      </div>
+    </div>
+
+    <!-- Outgoing -->
+    <div class="screen hidden" id="viewOutgoing">
+      <div class="avatar ring" id="outAvatar">?</div>
+      <div class="title" id="outName">Teman</div>
+      <div class="subtitle" id="outSub">Memanggil…</div>
+      <div class="actions">
+        <button class="btn-hang" id="btnCancel" type="button">Batalkan</button>
+      </div>
+    </div>
+
+    <!-- Incoming -->
+    <div class="screen hidden" id="viewIncoming">
+      <div class="avatar ring" id="inAvatar">?</div>
+      <div class="title" id="inName">Teman</div>
+      <div class="subtitle">Panggilan masuk</div>
+      <div class="actions">
+        <button class="btn-call" id="btnAccept" type="button">Angkat</button>
+        <button class="btn-hang" id="btnReject" type="button">Tolak</button>
+      </div>
+    </div>
+
+    <!-- In call -->
+    <div class="screen hidden" id="viewTalk">
+      <div class="avatar talk" id="talkAvatar">?</div>
+      <div class="title" id="talkName">Teman</div>
+      <div class="subtitle" id="talkTimer">00:00</div>
+      <p class="hint" id="talkPeers" style="margin:0.2rem 0;font-weight:600;"></p>
+      <p class="hint" id="mediaHint">Menghubungkan suara…</p>
+      <div class="actions">
+        <button class="btn-ghost" id="btnMute" type="button">Mute mic</button>
+        <button class="btn-ghost" id="btnRec" type="button">Rekam</button>
+        <button class="btn-call" id="btnSpeaker" type="button">Suara lawan</button>
+        <button class="btn-hang" id="btnHang" type="button">Tutup</button>
+      </div>
+      <p class="hint">Pantulan suara sendiri: pakai <b>earphone</b>, jauhkan HP, atau Mute mic saat lawan bicara.</p>
+    </div>
+  </div>
+  <div id="remoteAudios" aria-hidden="true"></div>
+  <audio id="remoteAudio" autoplay playsinline webkit-playsinline controls></audio>
+  <button class="hidden" id="btnUnmute" type="button">Aktifkan suara</button>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo2\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let sessionId = null;
+    let myName = "Aku";
+    let friendName = "Teman";
+    /** @type {Map<string, RTCPeerConnection>} */
+    const pcs = new Map();
+    /** @type {Map<string, RTCIceCandidateInit[]>} */
+    const iceQueues = new Map();
+    /** @type {Map<string, MediaStream>} */
+    const remoteStreams = new Map();
+    /** @type {Map<string, string>} */
+    const peerNames = new Map();
+    /** @type {Map<string, boolean>} */
+    const makingOffer = new Map();
+    /** @type {Map<string, boolean>} */
+    const ignoreOffer = new Map();
+    let localStream = null;
+    let remoteStream = null; // gabungan semua remote (rekaman / legacy audio)
+    let pendingOffer = null;
+    let pendingFrom = null;
+    let roomPeerIds = [];
+    let roomPeerCount = 0;
+    let callStartedAt = null;
+    let timerId = null;
+    let statsId = null;
+    let ringingAudio = null;
+    let ringCtx = null;
+    let audioCtx = null;
+    let remoteNode = null;
+    let disconnectTimers = new Map();
+    let micMuted = false;
+    let intentionalClose = false;
+    let reconnectTimer = null;
+    let reconnectAttempt = 0;
+    let callActive = false;
+    let ringTitleTimer = null;
+    let baseTitle = "NxSocket — Telepon";
+    const HIST_KEY = "nxsocket-call-history-voice";
+    const HIST_MAX = 30;
+    let callLog = null;
+
+    function loadCallHistory() {
+      try {
+        const raw = localStorage.getItem(HIST_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCallHistory(list) {
+      try {
+        localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, HIST_MAX)));
+      } catch { /* */ }
+    }
+
+    function outcomeLabel(o) {
+      if (o === "ended" || o === "answered") return "selesai";
+      if (o === "missed") return "terlewat";
+      if (o === "rejected") return "ditolak";
+      if (o === "cancelled") return "dibatalkan";
+      return o || "?";
+    }
+
+    function formatHistTime(iso) {
+      try {
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mi = String(d.getMinutes()).padStart(2, "0");
+        return `${dd}/${mm} ${hh}:${mi}`;
+      } catch {
+        return "";
+      }
+    }
+
+    function renderCallHistory() {
+      const list = loadCallHistory();
+      const ul = $("callHistList");
+      const empty = $("callHistEmpty");
+      if (!ul || !empty) return;
+      ul.innerHTML = "";
+      if (!list.length) {
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+      for (const e of list) {
+        const li = document.createElement("li");
+        const dir = e.direction === "in" ? "←" : "→";
+        const cls =
+          e.outcome === "missed" || e.outcome === "rejected"
+            ? e.outcome
+            : e.direction === "out"
+              ? "out"
+              : "";
+        const dur =
+          typeof e.durationSec === "number" && e.durationSec > 0
+            ? ` · ${Math.floor(e.durationSec / 60)}:${String(e.durationSec % 60).padStart(2, "0")}`
+            : "";
+        li.innerHTML =
+          `<span class="${cls}">${dir} ${e.peer || "?"} · ${outcomeLabel(e.outcome)}${dur}</span>` +
+          `<span class="meta">${formatHistTime(e.at)}</span>`;
+        ul.appendChild(li);
+      }
+    }
+
+    function beginCallLog(direction, peer) {
+      callLog = {
+        direction,
+        peer: peer || friendName || "Teman",
+        connected: false,
+        connectedAt: null,
+        settled: false,
+      };
+    }
+
+    function markCallConnected() {
+      if (!callLog || callLog.settled || callLog.connected) return;
+      callLog.connected = true;
+      callLog.connectedAt = Date.now();
+    }
+
+    function settleCallLog(outcome) {
+      if (!callLog || callLog.settled) return;
+      callLog.settled = true;
+      let durationSec = 0;
+      if (callLog.connected && callLog.connectedAt) {
+        durationSec = Math.max(0, Math.floor((Date.now() - callLog.connectedAt) / 1000));
+      }
+      const entry = {
+        id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 7),
+        at: new Date().toISOString(),
+        peer: callLog.peer,
+        direction: callLog.direction,
+        outcome: outcome || (callLog.connected ? "ended" : callLog.direction === "in" ? "missed" : "cancelled"),
+        durationSec: callLog.connected ? durationSec : undefined,
+        room: room(),
+      };
+      if (entry.outcome === "answered") entry.outcome = "ended";
+      const list = loadCallHistory();
+      list.unshift(entry);
+      saveCallHistory(list);
+      callLog = null;
+      renderCallHistory();
+    }
+
+    function finalizeCallLog() {
+      if (!callLog || callLog.settled) return;
+      if (callLog.connected) settleCallLog("ended");
+      else if (callLog.direction === "in") settleCallLog("missed");
+      else settleCallLog("cancelled");
+    }
+
+    function startRingAlert(who) {
+      try { navigator.vibrate?.([400, 120, 400, 120, 600]); } catch { /* */ }
+      document.title = "📞 " + (who || "Panggilan");
+      clearInterval(ringTitleTimer);
+      let flip = false;
+      ringTitleTimer = setInterval(() => {
+        flip = !flip;
+        document.title = flip ? "📞 Panggilan masuk" : baseTitle;
+      }, 900);
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+          new Notification("Panggilan masuk", {
+            body: (who || "Teman") + " menelepon via NxSocket",
+            tag: "nxsocket-call",
+          });
+        }
+      } catch { /* */ }
+    }
+
+    function stopRingAlert() {
+      clearInterval(ringTitleTimer);
+      ringTitleTimer = null;
+      document.title = baseTitle;
+    }
+
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recording = false;
+
+    function mixCallStream() {
+      const out = new MediaStream();
+      if (localStream) {
+        for (const t of localStream.getAudioTracks()) out.addTrack(t);
+      }
+      for (const stream of remoteStreams.values()) {
+        for (const t of stream.getAudioTracks()) out.addTrack(t);
+      }
+      if (!out.getAudioTracks().length && remoteStream) {
+        for (const t of remoteStream.getAudioTracks()) out.addTrack(t);
+      }
+      return out;
+    }
+
+    function setRecUi(on) {
+      recording = on;
+      const b = $("btnRec");
+      if (b) b.textContent = on ? "Stop rekam" : "Rekam";
+    }
+
+    function startRecording() {
+      if (recording || mediaRecorder) return;
+      const stream = mixCallStream();
+      if (!stream.getTracks().length) {
+        setMediaHint("Belum ada audio untuk direkam");
+        return;
+      }
+      recordedChunks = [];
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : "audio/webm";
+      try {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+      } catch {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size) recordedChunks.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        setRecUi(false);
+        if (!recordedChunks.length) return;
+        const blob = new Blob(recordedChunks, { type: recordedChunks[0].type || "audio/webm" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "nxsocket-call-" + Date.now() + ".webm";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        setMediaHint("Rekaman disimpan");
+        mediaRecorder = null;
+        recordedChunks = [];
+      };
+      mediaRecorder.start(1000);
+      setRecUi(true);
+      setMediaHint("Merekam panggilan…");
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        try { mediaRecorder.stop(); } catch { /* */ }
+      } else {
+        setRecUi(false);
+        mediaRecorder = null;
+      }
+    }
+
+    // Default STUN; diganti oleh ice.config dari server
+    let iceServers = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ];
+
+    function applyIceConfig(msg) {
+      if (Array.isArray(msg.iceServers) && msg.iceServers.length) {
+        iceServers = msg.iceServers;
+      }
+      const el = $("iceLabel");
+      if (el) el.textContent = msg.label || ("ICE: " + iceServers.length + " server");
+    }
+
+    const ID_KEY = "nxsocket_demo2_identity";
+
+    function loadLocalIdentity() {
+      try {
+        const raw = localStorage.getItem(ID_KEY);
+        if (!raw) return;
+        const o = JSON.parse(raw);
+        if (o.token && !$("token").value) $("token").value = o.token;
+        if (o.name) $("name").value = o.name;
+        if (o.friend) $("friend").value = o.friend;
+        if (o.room) $("room").value = o.room;
+      } catch { /* */ }
+    }
+
+    function saveLocalIdentity() {
+      try {
+        localStorage.setItem(
+          ID_KEY,
+          JSON.stringify({
+            token: $("token").value.trim(),
+            name: $("name").value.trim() || "Aku",
+            friend: $("friend").value.trim() || "Teman",
+            room: $("room").value.trim() || "teman-1",
+          }),
+        );
+      } catch { /* */ }
+    }
+
+    function applyProfileHint(msg) {
+      const q = new URLSearchParams(location.search);
+      if (msg.name && !q.get("name")) {
+        const cur = $("name").value.trim();
+        if (!cur || cur === "Aku") {
+          $("name").value = msg.name;
+          myName = msg.name;
+          if (ws?.readyState === WebSocket.OPEN) send({ type: "identify", name: myName });
+        }
+      }
+      if (msg.lastRoom && !q.get("room")) {
+        const cur = $("room").value.trim();
+        if (!cur || cur === "teman-1") {
+          $("room").value = msg.lastRoom;
+          if (ws?.readyState === WebSocket.OPEN) send({ type: "join", room: msg.lastRoom });
+        }
+      }
+      saveLocalIdentity();
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(base64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    }
+
+    async function registerWebPush(publicKey) {
+      if (!publicKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+      if (!window.isSecureContext) return;
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "default") {
+          await Notification.requestPermission();
+        }
+        if (typeof Notification !== "undefined" && Notification.permission !== "granted") return;
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+        }
+        const json = sub.toJSON();
+        if (!json.endpoint || !json.keys) return;
+        send({
+          type: "push.subscribe",
+          subscription: json,
+          rooms: [room()],
+          page: "demo2",
+        });
+        const ice = $("iceLabel");
+        if (ice && !/Push/.test(ice.textContent || "")) {
+          ice.textContent = (ice.textContent || "") + " · Push ON";
+        }
+      } catch (err) {
+        console.warn("[push]", err);
+      }
+    }
+
+    function isInCallUi() {
+      return ["viewOutgoing", "viewIncoming", "viewTalk"].some(
+        (id) => !$(id).classList.contains("hidden"),
+      );
+    }
+
+    function inviteUrl() {
+      const u = new URL(location.href);
+      u.searchParams.set("token", $("token").value.trim());
+      u.searchParams.set("name", $("friend").value.trim() || "Teman");
+      u.searchParams.set("friend", myName);
+      u.searchParams.set("room", room());
+      return u.toString();
+    }
+
+    function scheduleReconnect() {
+      if (intentionalClose) return;
+      $("netLabel").textContent = "Offline";
+      setMediaHint("Offline — menyambung ulang signaling…");
+      const delay = Math.min(10000, 800 * Math.pow(1.6, reconnectAttempt++));
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => connectWs(true), delay);
+    }
+
+    function connectWs() {
+      const token = $("token").value.trim();
+      if (!token) return;
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        try { ws.close(); } catch { /* */ }
+      }
+      const wsUrl = `${toWs(hostBase)}?token=${encodeURIComponent(token)}`;
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        $("netLabel").textContent = "Online";
+        reconnectAttempt = 0;
+      };
+      ws.onclose = () => {
+        if (intentionalClose) {
+          $("netLabel").textContent = "Offline";
+          endCall(false);
+          show("viewSetup");
+          return;
+        }
+        if (isInCallUi() || callActive) {
+          scheduleReconnect();
+          return;
+        }
+        $("netLabel").textContent = "Offline";
+        endCall(false);
+        show("viewSetup");
+      };
+      ws.onerror = () => { /* onclose */ };
+      ws.onmessage = async (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          sessionId = msg.sessionId;
+          send({ type: "identify", name: myName });
+          send({ type: "join", room: room() });
+          if (!isInCallUi()) show("viewIdle");
+          else setMediaHint("Signaling tersambung lagi");
+        } else if (msg.type === "profile.hint") {
+          applyProfileHint(msg);
+        } else if (msg.type === "ice.config") {
+          applyIceConfig(msg);
+        } else if (msg.type === "push.vapid") {
+          if (msg.enabled && msg.publicKey) void registerWebPush(msg.publicKey);
+        } else if (msg.type === "joined") {
+          roomPeerCount = msg.peers || 1;
+          roomPeerIds = Array.isArray(msg.peerIds) ? msg.peerIds.filter((id) => id !== sessionId) : [];
+          setPeerStatus(roomPeerCount);
+          if (callActive) void meshOfferMissing();
+        } else if (msg.type === "event" && msg.event === "room.peers") {
+          const d = msg.data || {};
+          roomPeerCount = d.peers != null ? d.peers : roomPeerCount;
+          if (Array.isArray(d.peerIds)) {
+            roomPeerIds = d.peerIds.filter((id) => id !== sessionId);
+          }
+          if (d.name && d.joined) peerNames.set(d.joined, d.name);
+          if (d.left) {
+            peerNames.delete(d.left);
+            void closePeer(d.left, false);
+          }
+          setPeerStatus(roomPeerCount);
+          if (callActive && d.joined && d.joined !== sessionId) {
+            void ensureOfferTo(d.joined);
+          }
+          updateTalkPeers();
+        } else if (msg.type === "error") {
+          console.warn(msg);
+          if (msg.code === "forbidden") alert(msg.message);
+        } else if (msg.type === "webrtc.signal") {
+          try {
+            await onSignal(msg);
+          } catch (err) {
+            console.error(err);
+            setMediaHint(err.message || "Signal gagal");
+          }
+        }
+      };
+    }
+
+    function initials(name) {
+      return (name || "?").trim().slice(0, 1).toUpperCase();
+    }
+
+    function room() {
+      return $("room").value.trim() || "teman-1";
+    }
+
+    function show(view) {
+      for (const id of ["viewSetup", "viewIdle", "viewOutgoing", "viewIncoming", "viewTalk"]) {
+        $(id).classList.toggle("hidden", id !== view);
+      }
+      if (view === "viewIdle") renderCallHistory();
+    }
+
+    function setFriendLabels() {
+      friendName = $("friend").value.trim() || "Teman";
+      for (const id of ["idleName", "outName", "inName", "talkName"]) $(id).textContent = friendName;
+      for (const id of ["idleAvatar", "outAvatar", "inAvatar", "talkAvatar"]) {
+        $(id).textContent = initials(friendName);
+      }
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMediaHint(text) {
+      const el = $("mediaHint");
+      if (el) el.textContent = text;
+    }
+
+    function startTimer() {
+      callStartedAt = Date.now();
+      markCallConnected();
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        const s = Math.floor((Date.now() - callStartedAt) / 1000);
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        $("talkTimer").textContent = `${mm}:${ss}`;
+      }, 500);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      callStartedAt = null;
+      $("talkTimer").textContent = "00:00";
+    }
+
+    function startStats() {
+      clearInterval(statsId);
+      statsId = setInterval(async () => {
+        if (!pcs.size) return;
+        try {
+          let packets = 0;
+          let bytes = 0;
+          let ice = "new";
+          for (const peer of pcs.values()) {
+            ice = peer.iceConnectionState;
+            const stats = await peer.getStats();
+            stats.forEach((r) => {
+              if (r.type === "inbound-rtp" && (r.kind === "audio" || r.mediaType === "audio")) {
+                packets += r.packetsReceived || 0;
+                bytes += r.bytesReceived || 0;
+              }
+            });
+          }
+          if (packets > 0 || bytes > 0) {
+            setMediaHint(`Suara masuk · ${pcs.size} peer · ICE ${ice}`);
+          } else {
+            setMediaHint(`Belum ada audio · ${pcs.size} peer · ketuk «Suara lawan»`);
+          }
+        } catch {
+          /* ignore */
+        }
+      }, 1000);
+    }
+
+    function stopStats() {
+      clearInterval(statsId);
+      statsId = null;
+    }
+
+    function beepRing(on) {
+      if (!on) {
+        if (ringingAudio) {
+          clearInterval(ringingAudio);
+          ringingAudio = null;
+        }
+        if (ringCtx) {
+          void ringCtx.close().catch(() => {});
+          ringCtx = null;
+        }
+        return;
+      }
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      ringCtx = new Ctx();
+      ringingAudio = setInterval(() => {
+        if (!ringCtx) return;
+        if (ringCtx.state === "suspended") void ringCtx.resume();
+        const o = ringCtx.createOscillator();
+        const g = ringCtx.createGain();
+        o.frequency.value = 880;
+        g.gain.value = 0.03;
+        o.connect(g);
+        g.connect(ringCtx.destination);
+        o.start();
+        setTimeout(() => {
+          try { o.stop(); } catch { /* ignore */ }
+        }, 160);
+      }, 900);
+    }
+
+    function setPeerStatus(count) {
+      roomPeerCount = count;
+      const el = $("peerStatus");
+      if (!el) return;
+      if (count >= 3) {
+        el.style.color = "#2fbf71";
+        el.textContent = "Di room: " + count + " · mode grup mesh";
+      } else if (count >= 2) {
+        el.style.color = "#2fbf71";
+        el.textContent = "Di room: " + count + " ✓ boleh menelepon";
+      } else {
+        el.style.color = "#e0a35a";
+        el.textContent = "Di room: " + count + " — tunggu lawan Masuk (room sama)";
+      }
+    }
+
+    function updateTalkPeers() {
+      const el = $("talkPeers");
+      if (!el) return;
+      const names = [...pcs.keys()].map((id) => peerNames.get(id) || id.slice(0, 6));
+      if (!names.length) {
+        el.textContent = "";
+        return;
+      }
+      el.textContent = "Peserta: " + names.join(", ");
+      $("talkName").textContent = names.length > 1 ? ("Grup (" + (names.length + 1) + ")") : (names[0] || friendName);
+    }
+
+    function rebuildMixedRemote() {
+      remoteStream = new MediaStream();
+      for (const stream of remoteStreams.values()) {
+        for (const t of stream.getAudioTracks()) {
+          if (!remoteStream.getTracks().some((x) => x.id === t.id)) remoteStream.addTrack(t);
+        }
+      }
+      const legacy = $("remoteAudio");
+      if (legacy) legacy.srcObject = remoteStream.getAudioTracks().length ? remoteStream : null;
+    }
+
+    function audioElFor(peerId) {
+      const box = $("remoteAudios");
+      if (!box) return null;
+      let el = document.getElementById("aud-" + peerId);
+      if (!el) {
+        el = document.createElement("audio");
+        el.id = "aud-" + peerId;
+        el.autoplay = true;
+        el.playsInline = true;
+        el.setAttribute("playsinline", "");
+        el.controls = false;
+        box.appendChild(el);
+      }
+      return el;
+    }
+
+    async function unlockAudio() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        if (!audioCtx || audioCtx.state === "closed") audioCtx = new Ctx();
+        if (audioCtx.state === "suspended") await audioCtx.resume();
+      }
+      for (const peerId of remoteStreams.keys()) {
+        const el = audioElFor(peerId);
+        if (!el) continue;
+        el.muted = false;
+        el.volume = 1;
+        try { await el.play(); } catch { /* */ }
+      }
+      const legacy = $("remoteAudio");
+      if (legacy) {
+        legacy.muted = false;
+        try { await legacy.play(); } catch { /* */ }
+      }
+    }
+
+    async function playRemote() {
+      await unlockAudio();
+      let ok = false;
+      for (const peerId of remoteStreams.keys()) {
+        const el = audioElFor(peerId);
+        const stream = remoteStreams.get(peerId);
+        if (!el || !stream) continue;
+        el.srcObject = stream;
+        el.muted = false;
+        el.volume = 1;
+        try {
+          await el.play();
+          ok = true;
+        } catch { /* */ }
+      }
+      rebuildMixedRemote();
+      if (ok) $("btnUnmute").classList.add("hidden");
+      else {
+        $("btnUnmute").classList.remove("hidden");
+        setMediaHint("Ketuk «Suara lawan» / «Aktifkan suara»");
+      }
+    }
+
+    function attachRemoteTrack(peerId, track) {
+      if (!track || track.kind !== "audio" || !peerId) return;
+      track.enabled = true;
+      let stream = remoteStreams.get(peerId);
+      if (!stream) {
+        stream = new MediaStream();
+        remoteStreams.set(peerId, stream);
+      }
+      if (!stream.getTracks().some((t) => t.id === track.id)) stream.addTrack(track);
+      const el = audioElFor(peerId);
+      if (el) el.srcObject = stream;
+      rebuildMixedRemote();
+      updateTalkPeers();
+      void playRemote();
+    }
+
+    async function flushIce(peerId) {
+      const pc = pcs.get(peerId);
+      if (!pc || !pc.remoteDescription) return;
+      const queued = iceQueues.get(peerId) || [];
+      iceQueues.set(peerId, []);
+      for (const candidate of queued) {
+        try { await pc.addIceCandidate(candidate); } catch { /* */ }
+      }
+    }
+
+    async function addRemoteIce(peerId, candidate) {
+      if (!candidate || !peerId) return;
+      const pc = pcs.get(peerId);
+      if (!pc || !pc.remoteDescription) {
+        const q = iceQueues.get(peerId) || [];
+        q.push(candidate);
+        iceQueues.set(peerId, q);
+        return;
+      }
+      try { await pc.addIceCandidate(candidate); } catch { /* */ }
+    }
+
+    async function ensureMic() {
+      if (localStream) return localStream;
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Mikrofon diblokir: buka lewat HTTPS.\n\nnxsocket server --https\nlalu https://IP:7080/v1/demo2",
+        );
+      }
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+          googEchoCancellation: true,
+          googNoiseSuppression: true,
+          googAutoGainControl: true,
+          googHighpassFilter: true,
+          googTypingNoiseDetection: true,
+        },
+        video: false,
+      });
+      for (const t of localStream.getAudioTracks()) {
+        t.enabled = !micMuted;
+        try {
+          await t.applyConstraints({
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          });
+        } catch { /* */ }
+      }
+      return localStream;
+    }
+
+    function setMicMuted(muted) {
+      micMuted = muted;
+      if (localStream) {
+        for (const t of localStream.getAudioTracks()) t.enabled = !muted;
+      }
+      const btn = $("btnMute");
+      if (btn) btn.textContent = muted ? "Unmute mic" : "Mute mic";
+    }
+
+    function wirePc(peerRef, peer) {
+      peer.onicecandidate = (ev) => {
+        if (!ev.candidate) return;
+        const to = peerRef.id !== "broadcast" ? peerRef.id : undefined;
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          to,
+          payload: {
+            candidate: ev.candidate.toJSON ? ev.candidate.toJSON() : ev.candidate,
+            name: myName,
+          },
+        });
+      };
+      peer.ontrack = (ev) => {
+        const peerId = peerRef.id;
+        if (ev.track) attachRemoteTrack(peerId, ev.track);
+        if (ev.streams?.[0]) {
+          for (const t of ev.streams[0].getAudioTracks()) attachRemoteTrack(peerId, t);
+        }
+      };
+      peer.onconnectionstatechange = () => {
+        const peerId = peerRef.id;
+        const st = peer.connectionState;
+        if (st === "failed") {
+          setMediaHint("Koneksi ke " + (peerNames.get(peerId) || "peer") + " gagal");
+          void closePeer(peerId, false);
+        } else if (st === "closed") {
+          void closePeer(peerId, false);
+        } else if (st === "disconnected") {
+          clearTimeout(disconnectTimers.get(peerId));
+          disconnectTimers.set(
+            peerId,
+            setTimeout(() => {
+              const p = pcs.get(peerId);
+              if (p && p.connectionState === "disconnected") void closePeer(peerId, false);
+            }, 4000),
+          );
+        } else if (st === "connected") {
+          clearTimeout(disconnectTimers.get(peerId));
+          disconnectTimers.delete(peerId);
+          beepRing(false);
+          stopRingAlert();
+          show("viewTalk");
+          if (!callStartedAt) startTimer();
+          startStats();
+          updateTalkPeers();
+          void playRemote();
+        } else if (st === "connecting") {
+          setMediaHint("Menghubungkan suara…");
+        }
+      };
+      peer.oniceconnectionstatechange = () => {
+        if (peer.iceConnectionState === "failed") {
+          setMediaHint("ICE gagal — cek WiFi / TURN");
+        }
+        if (peer.iceConnectionState === "connected" || peer.iceConnectionState === "completed") {
+          void playRemote();
+        }
+      };
+    }
+
+    async function getPc(peerId) {
+      let pc = pcs.get(peerId);
+      if (pc) return pc;
+      pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
+      const peerRef = { id: peerId };
+      pc.__nxRef = peerRef;
+      pcs.set(peerId, pc);
+      wirePc(peerRef, pc);
+      const mic = await ensureMic();
+      for (const track of mic.getAudioTracks()) {
+        pc.addTrack(track, mic);
+      }
+      for (const t of pc.getTransceivers()) {
+        if (t.receiver.track?.kind === "audio" || t.sender.track?.kind === "audio") {
+          try { t.direction = "sendrecv"; } catch { /* */ }
+        }
+      }
+      updateTalkPeers();
+      return pc;
+    }
+
+    async function closePeer(peerId, notify) {
+      const pc = pcs.get(peerId);
+      if (pc) {
+        try { pc.close(); } catch { /* */ }
+        pcs.delete(peerId);
+      }
+      iceQueues.delete(peerId);
+      makingOffer.delete(peerId);
+      ignoreOffer.delete(peerId);
+      remoteStreams.delete(peerId);
+      const el = document.getElementById("aud-" + peerId);
+      if (el) el.remove();
+      clearTimeout(disconnectTimers.get(peerId));
+      disconnectTimers.delete(peerId);
+      rebuildMixedRemote();
+      updateTalkPeers();
+      if (notify && ws?.readyState === WebSocket.OPEN) {
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          to: peerId,
+          payload: { hangup: true, name: myName },
+        });
+      }
+      if (callActive && pcs.size === 0) {
+        endCall(false);
+        show("viewIdle");
+      }
+    }
+
+    async function ensureOfferTo(peerId, force) {
+      if (!peerId || peerId === sessionId || !callActive) return;
+      // Tanpa force: hanya impolite createOffer (hindari glare saat peer baru join)
+      if (!force && String(sessionId) >= String(peerId)) return;
+      const pc = await getPc(peerId);
+      if (pc.signalingState !== "stable") return;
+      try {
+        makingOffer.set(peerId, true);
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: false,
+        });
+        await pc.setLocalDescription(offer);
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "offer",
+          to: peerId,
+          payload: { sdp: pc.localDescription, name: myName },
+        });
+      } finally {
+        makingOffer.set(peerId, false);
+      }
+    }
+
+    async function meshOfferMissing() {
+      for (const id of roomPeerIds) {
+        if (!pcs.has(id)) await ensureOfferTo(id, false);
+      }
+    }
+
+    async function placeCall() {
+      callActive = true;
+      setFriendLabels();
+      beginCallLog("out", friendName);
+      show("viewOutgoing");
+      $("outSub").textContent = roomPeerCount >= 3 ? "Memulai grup…" : "Memanggil…";
+      await unlockAudio();
+      beepRing(true);
+      send({ type: "join", room: room() });
+      await ensureMic();
+      await new Promise((r) => setTimeout(r, 350));
+      const list = roomPeerIds.slice();
+      if (!list.length) {
+        setMediaHint("Belum ada lawan di room — tetap Online, mereka bisa Angkat / Telepon");
+        const fake = "broadcast";
+        const pc = await getPc(fake);
+        makingOffer.set(fake, true);
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: false,
+        });
+        await pc.setLocalDescription(offer);
+        makingOffer.set(fake, false);
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "offer",
+          payload: { sdp: pc.localDescription, name: myName },
+        });
+        return;
+      }
+      for (const id of list) {
+        await ensureOfferTo(id, true);
+      }
+    }
+
+    async function acceptCall() {
+      if (!pendingOffer || !pendingFrom) return;
+      callActive = true;
+      stopRingAlert();
+      beepRing(false);
+      setFriendLabels();
+      if (!callLog) beginCallLog("in", friendName);
+      show("viewTalk");
+      setMediaHint("Menghubungkan suara…");
+      startTimer();
+      await unlockAudio();
+
+      const peerId = pendingFrom;
+      const sdp = pendingOffer;
+      pendingOffer = null;
+      pendingFrom = null;
+
+      const pc = await getPc(peerId);
+      await pc.setRemoteDescription(sdp);
+      await flushIce(peerId);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      send({
+        type: "webrtc.signal",
+        room: room(),
+        signal: "answer",
+        to: peerId,
+        payload: { sdp: pc.localDescription, name: myName },
+      });
+      startStats();
+      updateTalkPeers();
+      void playRemote();
+      // Tawarkan ke peer lain di room (grup)
+      void meshOfferMissing();
+    }
+
+    function rejectCall() {
+      stopRingAlert();
+      beepRing(false);
+      settleCallLog("rejected");
+      pendingOffer = null;
+      pendingFrom = null;
+      endCall(true);
+      show("viewIdle");
+    }
+
+    function endCall(notifyPeer) {
+      callActive = false;
+      finalizeCallLog();
+      stopRingAlert();
+      stopRecording();
+      beepRing(false);
+      stopTimer();
+      stopStats();
+      for (const t of disconnectTimers.values()) clearTimeout(t);
+      disconnectTimers.clear();
+      $("btnUnmute").classList.add("hidden");
+      if (remoteNode) {
+        try { remoteNode.disconnect(); } catch { /* */ }
+        remoteNode = null;
+      }
+      const ids = [...pcs.keys()];
+      for (const id of ids) {
+        const pc = pcs.get(id);
+        try { pc?.close(); } catch { /* */ }
+      }
+      pcs.clear();
+      iceQueues.clear();
+      makingOffer.clear();
+      ignoreOffer.clear();
+      remoteStreams.clear();
+      const box = $("remoteAudios");
+      if (box) box.innerHTML = "";
+      if (localStream) {
+        for (const t of localStream.getTracks()) t.stop();
+        localStream = null;
+      }
+      remoteStream = null;
+      $("remoteAudio").srcObject = null;
+      micMuted = false;
+      const muteBtn = $("btnMute");
+      if (muteBtn) muteBtn.textContent = "Mute mic";
+      pendingOffer = null;
+      pendingFrom = null;
+      updateTalkPeers();
+      if (notifyPeer && ws?.readyState === WebSocket.OPEN) {
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          payload: { hangup: true, name: myName },
+        });
+      }
+      if (ws?.readyState === WebSocket.OPEN) show("viewIdle");
+    }
+
+    async function onSignal(msg) {
+      if (msg.from && sessionId && msg.from === sessionId) return;
+      const data = msg.payload || {};
+      const from = msg.from || "broadcast";
+
+      if (data.hangup) {
+        if (from && from !== "broadcast") {
+          await closePeer(from, false);
+          return;
+        }
+        endCall(false);
+        show("viewIdle");
+        return;
+      }
+
+      if (data.name && from) peerNames.set(from, data.name);
+
+      if (msg.signal === "offer") {
+        const sdp = data.sdp || data;
+        const who = data.name || friendName;
+        const polite = String(sessionId) < String(from);
+
+        if (!callActive) {
+          $("friend").value = who;
+          setFriendLabels();
+          pendingOffer = sdp;
+          pendingFrom = from;
+          beginCallLog("in", who);
+          show("viewIncoming");
+          startRingAlert(who);
+          beepRing(true);
+          return;
+        }
+
+        // Sudah dalam panggilan: auto-answer (grup) + perfect negotiation
+        const pc = await getPc(from);
+        const offerCollision = makingOffer.get(from) || pc.signalingState !== "stable";
+        ignoreOffer.set(from, !polite && offerCollision);
+        if (ignoreOffer.get(from)) return;
+        await pc.setRemoteDescription(sdp);
+        await flushIce(from);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "answer",
+          to: from,
+          payload: { sdp: pc.localDescription, name: myName },
+        });
+        updateTalkPeers();
+        void playRemote();
+        return;
+      }
+
+      if (msg.signal === "answer") {
+        let peerId = from;
+        if (!pcs.has(peerId) && pcs.has("broadcast")) peerId = "broadcast";
+        const pc = pcs.get(peerId);
+        if (!pc) return;
+        if (pc.signalingState !== "have-local-offer" && pc.remoteDescription) return;
+        const sdp = data.sdp || data;
+        await pc.setRemoteDescription(sdp);
+        await flushIce(peerId);
+        // Rename broadcast PC ke from jika perlu
+        if (peerId === "broadcast" && from && from !== "broadcast") {
+          pcs.set(from, pc);
+          pcs.delete("broadcast");
+          if (pc.__nxRef) pc.__nxRef.id = from;
+          const q = iceQueues.get("broadcast");
+          if (q) {
+            iceQueues.set(from, q);
+            iceQueues.delete("broadcast");
+          }
+          const stream = remoteStreams.get("broadcast");
+          if (stream) {
+            remoteStreams.set(from, stream);
+            remoteStreams.delete("broadcast");
+          }
+          const el = document.getElementById("aud-broadcast");
+          if (el) el.id = "aud-" + from;
+        }
+        stopRingAlert();
+        beepRing(false);
+        show("viewTalk");
+        setMediaHint("Menghubungkan suara…");
+        if (!callStartedAt) startTimer();
+        startStats();
+        updateTalkPeers();
+        void playRemote();
+        return;
+      }
+
+      if (msg.signal === "ice" && data.candidate) {
+        const peerId = pcs.has(from) ? from : pcs.has("broadcast") ? "broadcast" : from;
+        await addRemoteIce(peerId, data.candidate);
+      }
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) {
+        alert("Tempel token dulu");
+        return;
+      }
+      myName = $("name").value.trim() || "Aku";
+      setFriendLabels();
+      saveLocalIdentity();
+      intentionalClose = false;
+      reconnectAttempt = 0;
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+      connectWs();
+    };
+
+    $("btnCall").onclick = () => placeCall().catch((e) => {
+      alert(e.message || "Tidak bisa akses mikrofon — pakai HTTPS");
+      endCall(false);
+      show("viewIdle");
+    });
+    $("btnCancel").onclick = () => endCall(true);
+    $("btnAccept").onclick = () => acceptCall().catch((e) => {
+      alert(e.message || "Gagal angkat — pastikan pakai HTTPS");
+      endCall(false);
+      show("viewIdle");
+    });
+    $("btnReject").onclick = () => rejectCall();
+    $("btnHang").onclick = () => endCall(true);
+    $("btnUnmute").onclick = () => void playRemote();
+    $("btnSpeaker").onclick = () => void playRemote();
+    $("btnMute").onclick = () => setMicMuted(!micMuted);
+    $("btnRec").onclick = () => {
+      if (recording) stopRecording();
+      else startRecording();
+    };
+    $("btnInvite").onclick = async () => {
+      const link = inviteUrl();
+      try {
+        await navigator.clipboard.writeText(link);
+        setMediaHint("Link undangan disalin");
+      } catch {
+        prompt("Salin undangan:", link);
+      }
+    };
+    $("btnClearHist").onclick = () => {
+      saveCallHistory([]);
+      renderCallHistory();
+    };
+    $("btnLogout").onclick = () => {
+      intentionalClose = true;
+      clearTimeout(reconnectTimer);
+      endCall(false);
+      ws?.close();
+      show("viewSetup");
+    };
+
+    const q = new URLSearchParams(location.search);
+    loadLocalIdentity();
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("friend")) $("friend").value = q.get("friend");
+    if (q.get("room")) $("room").value = q.get("room");
+
+    $("lanHint").textContent = `${location.origin}${location.pathname.replace(/\/?$/, "")}`;
+    if (!window.isSecureContext) {
+      $("secureWarn").style.display = "block";
+    }
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

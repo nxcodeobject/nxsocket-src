@@ -1,0 +1,16 @@
+# Contoh config named tunnel Cloudflare untuk NxSocket
+# Salin ke: %USERPROFILE%\.cloudflared\config.yml
+# (atau set CLOUDFLARED_CONFIG ke path file ini)
+#
+# Ganti:
+#   <TUNNEL_ID>     → dari `cloudflared tunnel create nxsocket`
+#   <HOSTNAME>      → mis. nxsocket.domainanda.com
+#   credentials     → file JSON yang dibuat saat create tunnel
+
+tunnel: <TUNNEL_ID>
+credentials-file: C:\Users\<USER>\.cloudflared\<TUNNEL_ID>.json
+
+ingress:
+  - hostname: <HOSTNAME>
+    service: http://127.0.0.1:7080
+  - service: http_status:404

@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="theme-color" content="#2fbf71" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/nxsocket.svg" type="image/svg+xml" />
+  <title>NxSocket — Group Video</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1512;
+      --card: #16211c;
+      --line: #2a3b33;
+      --text: #eef6f1;
+      --muted: #8aa396;
+      --green: #2fbf71;
+      --red: #e25555;
+      --amber: #e0a35a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, #1c3d30 0%, transparent 60%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 420px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.1rem 1rem 1.25rem;
+      min-height: 580px;
+      display: flex;
+      flex-direction: column;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 0.55rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0; font-size: 1.25rem; text-align: center; letter-spacing: -0.02em; }
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0.2rem;
+    }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.75rem; color: var(--muted); margin: 0.4rem 0 0.2rem; text-align: left; width: 100%; }
+    input {
+      width: 100%;
+      background: #101a16;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.6rem 0.75rem;
+      font: inherit;
+      outline: none;
+    }
+    .setup { width: 100%; text-align: left; }
+    .actions {
+      display: flex;
+      gap: 0.55rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 0.45rem;
+    }
+    button {
+      font: inherit;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 0.75rem 1.1rem;
+    }
+    .btn-call { background: var(--green); color: #062414; min-width: 130px; }
+    .btn-hang { background: var(--red); color: #fff; min-width: 130px; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.35;
+      margin: 0.35rem 0 0;
+    }
+    .title { font-size: 1.2rem; font-weight: 700; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; }
+    .grid {
+      width: 100%;
+      flex: 1;
+      min-height: 280px;
+      display: grid;
+      gap: 6px;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-rows: minmax(120px, 1fr);
+      background: #0a100e;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+    .grid.solo { grid-template-columns: 1fr; }
+    .tile {
+      position: relative;
+      background: #0a100e;
+      overflow: hidden;
+      min-height: 120px;
+    }
+    .tile video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #0a100e;
+    }
+    .tile .tag {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      font-size: 0.68rem;
+      background: rgba(0,0,0,0.55);
+      padding: 0.15rem 0.4rem;
+      border-radius: 6px;
+    }
+    #localTile {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      width: 28%;
+      max-width: 110px;
+      aspect-ratio: 3/4;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.35);
+      z-index: 3;
+      overflow: hidden;
+    }
+    #localTile video { transform: scaleX(-1); }
+    #ringOverlay {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #0e1512;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.85rem; padding: 1.5rem; text-align: center;
+    }
+    #ringOverlay.hidden { display: none !important; }
+    #ringOverlay .banner { color: var(--amber); font-weight: 700; font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <div id="ringOverlay" class="hidden">
+    <div class="banner" id="ringBanner">Panggilan masuk</div>
+    <div class="title" id="ringName">Teman</div>
+    <div class="actions">
+      <button class="btn-call" id="btnAcceptRing" type="button">Angkat</button>
+      <button class="btn-hang" id="btnRejectRing" type="button">Tolak</button>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="top">
+      <a href="./demo3">Video 1:1</a>
+      <a href="./demo2">Telepon</a>
+      <span id="netLabel">Offline</span>
+    </div>
+    <h1>Group Video</h1>
+
+    <div class="screen" id="viewSetup">
+      <div class="setup">
+        <p class="hint" style="text-align:left;">
+          Mesh video terpisah dari demo3. Max ~3–4 HP, room sama, HTTPS.
+          Contoh: <code id="lanHint">https://IP:7080/v1/demo8</code>
+        </p>
+        <p class="hint" id="secureWarn" style="color:var(--amber);display:none;text-align:left;">
+          Pakai <b>HTTPS</b> — <code>nxsocket server --https</code>
+        </p>
+        <label for="token">Token gateway</label>
+        <input id="token" placeholder="Dari: nxsocket gateway info" />
+        <label for="name">Nama kamu</label>
+        <input id="name" value="Aku" />
+        <label for="room">ID ruang grup</label>
+        <input id="room" value="grup-1" />
+        <div class="actions">
+          <button class="btn-call" id="btnReady" type="button">Masuk</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="viewIdle">
+      <div class="title">Siap grup</div>
+      <p class="hint" id="peerStatus" style="color:var(--amber);font-weight:700;">Di room: …</p>
+      <p class="hint" id="iceLabel">ICE: menunggu…</p>
+      <div class="actions">
+        <button class="btn-call" id="btnCall" type="button">Mulai / Gabung</button>
+        <button class="btn-ghost" id="btnInvite" type="button">Salin undangan</button>
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+      <p class="hint">Semua HP Masuk dulu (room sama), lalu tekan Mulai / Gabung.</p>
+    </div>
+
+    <div class="screen hidden" id="viewOutgoing">
+      <div class="title">Memanggil grup…</div>
+      <div class="subtitle" id="outSub">Menunggu…</div>
+      <div class="actions">
+        <button class="btn-hang" id="btnCancel" type="button">Batalkan</button>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="viewIncoming">
+      <div class="title" id="inName">Teman</div>
+      <div class="subtitle">Video grup masuk</div>
+      <div class="actions">
+        <button class="btn-call" id="btnAccept" type="button">Angkat</button>
+        <button class="btn-hang" id="btnReject" type="button">Tolak</button>
+      </div>
+    </div>
+
+    <div class="screen hidden" id="viewTalk" style="justify-content:flex-start;padding-top:0.2rem;">
+      <div class="grid solo" id="videoGrid">
+        <div id="localTile" class="tile">
+          <video id="localVideo" autoplay muted playsinline></video>
+          <span class="tag">Kamu</span>
+        </div>
+      </div>
+      <div class="subtitle" id="talkTimer">00:00</div>
+      <p class="hint" id="talkPeers" style="font-weight:600;"></p>
+      <p class="hint" id="mediaHint">Menghubungkan…</p>
+      <div class="actions">
+        <button class="btn-ghost" id="btnMute" type="button">Mute mic</button>
+        <button class="btn-ghost" id="btnCam" type="button">Cam off</button>
+        <button class="btn-ghost" id="btnFlip" type="button">Ganti cam</button>
+        <button class="btn-hang" id="btnHang" type="button">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (location.protocol === "http:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      location.replace("https://" + location.host + location.pathname + location.search + location.hash);
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo8\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let sessionId = null;
+    let myName = "Aku";
+    const pcs = new Map();
+    const iceQueues = new Map();
+    const peerNames = new Map();
+    const makingOffer = new Map();
+    const ignoreOffer = new Map();
+    const disconnectTimers = new Map();
+    let localStream = null;
+    let pendingOffer = null;
+    let pendingFrom = null;
+    let roomPeerIds = [];
+    let roomPeerCount = 0;
+    let callActive = false;
+    let callStartedAt = null;
+    let timerId = null;
+    let micMuted = false;
+    let camOff = false;
+    let facingMode = "user";
+    let intentionalClose = false;
+    let reconnectTimer = null;
+    let reconnectAttempt = 0;
+    let ringTitleTimer = null;
+    const baseTitle = "NxSocket — Group Video";
+    let iceServers = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ];
+
+    function show(view) {
+      for (const id of ["viewSetup", "viewIdle", "viewOutgoing", "viewIncoming", "viewTalk"]) {
+        $(id).classList.toggle("hidden", id !== view);
+      }
+    }
+
+    function room() {
+      return $("room").value.trim() || "grup-1";
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function setMediaHint(t) {
+      const el = $("mediaHint");
+      if (el) el.textContent = t;
+    }
+
+    function setPeerStatus(count) {
+      roomPeerCount = count;
+      const el = $("peerStatus");
+      if (!el) return;
+      if (count >= 3) {
+        el.style.color = "#2fbf71";
+        el.textContent = "Di room: " + count + " · grup video mesh";
+      } else if (count >= 2) {
+        el.style.color = "#2fbf71";
+        el.textContent = "Di room: " + count + " ✓ siap";
+      } else {
+        el.style.color = "#e0a35a";
+        el.textContent = "Di room: " + count + " — tunggu lawan";
+      }
+    }
+
+    function updateTalkPeers() {
+      const el = $("talkPeers");
+      if (!el) return;
+      const names = [...pcs.keys()]
+        .filter((id) => id !== "broadcast")
+        .map((id) => peerNames.get(id) || id.slice(0, 6));
+      el.textContent = names.length ? ("Peserta: " + names.join(", ")) : "";
+      const grid = $("videoGrid");
+      if (grid) grid.classList.toggle("solo", names.length <= 1);
+    }
+
+    function startTimer() {
+      if (callStartedAt) return;
+      callStartedAt = Date.now();
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        const s = Math.floor((Date.now() - callStartedAt) / 1000);
+        $("talkTimer").textContent =
+          String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+      }, 500);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      callStartedAt = null;
+      $("talkTimer").textContent = "00:00";
+    }
+
+    function startRingAlert(who) {
+      document.title = "📞 " + (who || "Grup");
+      clearInterval(ringTitleTimer);
+      let flip = false;
+      ringTitleTimer = setInterval(() => {
+        flip = !flip;
+        document.title = flip ? "📞 Panggilan masuk" : baseTitle;
+      }, 900);
+      try {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+          new Notification("Group video masuk", {
+            body: (who || "Teman") + " via NxSocket",
+            tag: "nxsocket-call",
+          });
+        }
+      } catch { /* */ }
+      try { navigator.vibrate?.([400, 100, 400]); } catch { /* */ }
+    }
+
+    function stopRingAlert() {
+      clearInterval(ringTitleTimer);
+      ringTitleTimer = null;
+      document.title = baseTitle;
+    }
+
+    function hideRing() {
+      $("ringOverlay").classList.add("hidden");
+    }
+
+    function showRing(who) {
+      $("ringName").textContent = who || "Teman";
+      $("ringBanner").textContent = "Group video masuk";
+      $("ringOverlay").classList.remove("hidden");
+    }
+
+    function applyIceConfig(msg) {
+      if (Array.isArray(msg.iceServers) && msg.iceServers.length) iceServers = msg.iceServers;
+      const el = $("iceLabel");
+      if (el) el.textContent = msg.label || ("ICE: " + iceServers.length + " server");
+    }
+
+    function inviteUrl() {
+      const u = new URL(location.href);
+      u.searchParams.set("token", $("token").value.trim());
+      u.searchParams.set("name", $("name").value.trim() || "Teman");
+      u.searchParams.set("room", room());
+      return u.toString();
+    }
+
+    function tileFor(peerId) {
+      let tile = document.getElementById("tile-" + peerId);
+      if (tile) return tile;
+      tile = document.createElement("div");
+      tile.className = "tile";
+      tile.id = "tile-" + peerId;
+      const v = document.createElement("video");
+      v.autoplay = true;
+      v.playsInline = true;
+      v.setAttribute("playsinline", "");
+      v.id = "vid-" + peerId;
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.id = "tag-" + peerId;
+      tag.textContent = peerNames.get(peerId) || peerId.slice(0, 6);
+      tile.appendChild(v);
+      tile.appendChild(tag);
+      $("videoGrid").appendChild(tile);
+      updateTalkPeers();
+      return tile;
+    }
+
+    function removeTile(peerId) {
+      document.getElementById("tile-" + peerId)?.remove();
+      updateTalkPeers();
+    }
+
+    async function ensureMedia() {
+      if (localStream) return localStream;
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Kamera/mic butuh HTTPS (nxsocket server --https)");
+      }
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: { ideal: true },
+          noiseSuppression: { ideal: true },
+          autoGainControl: { ideal: true },
+        },
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+        },
+      });
+      for (const t of localStream.getAudioTracks()) t.enabled = !micMuted;
+      for (const t of localStream.getVideoTracks()) t.enabled = !camOff;
+      const lv = $("localVideo");
+      lv.srcObject = localStream;
+      lv.muted = true;
+      void lv.play().catch(() => {});
+      return localStream;
+    }
+
+    function setMicMuted(on) {
+      micMuted = on;
+      if (localStream) for (const t of localStream.getAudioTracks()) t.enabled = !on;
+      $("btnMute").textContent = on ? "Unmute mic" : "Mute mic";
+    }
+
+    function setCamOff(on) {
+      camOff = on;
+      if (localStream) for (const t of localStream.getVideoTracks()) t.enabled = !on;
+      $("btnCam").textContent = on ? "Cam on" : "Cam off";
+    }
+
+    async function flipCamera() {
+      facingMode = facingMode === "user" ? "environment" : "user";
+      if (!localStream) return;
+      const old = localStream.getVideoTracks()[0];
+      let next;
+      try {
+        next = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
+          audio: false,
+        });
+      } catch {
+        setMediaHint("Ganti cam gagal");
+        return;
+      }
+      const track = next.getVideoTracks()[0];
+      for (const pc of pcs.values()) {
+        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) await sender.replaceTrack(track);
+      }
+      if (old) {
+        localStream.removeTrack(old);
+        old.stop();
+      }
+      localStream.addTrack(track);
+      $("localVideo").srcObject = localStream;
+      for (const t of next.getTracks()) {
+        if (t.kind !== "video") t.stop();
+      }
+    }
+
+    function wirePc(peerRef, peer) {
+      peer.onicecandidate = (ev) => {
+        if (!ev.candidate) return;
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          to: peerRef.id !== "broadcast" ? peerRef.id : undefined,
+          payload: {
+            candidate: ev.candidate.toJSON ? ev.candidate.toJSON() : ev.candidate,
+            name: myName,
+          },
+        });
+      };
+      peer.ontrack = (ev) => {
+        const peerId = peerRef.id;
+        const tile = tileFor(peerId);
+        const v = tile.querySelector("video");
+        let stream = v.srcObject;
+        if (!(stream instanceof MediaStream)) {
+          stream = new MediaStream();
+          v.srcObject = stream;
+        }
+        if (ev.track && !stream.getTracks().some((t) => t.id === ev.track.id)) {
+          stream.addTrack(ev.track);
+        }
+        void v.play().catch(() => {});
+        const tag = document.getElementById("tag-" + peerId);
+        if (tag) tag.textContent = peerNames.get(peerId) || peerId.slice(0, 6);
+        updateTalkPeers();
+      };
+      peer.onconnectionstatechange = () => {
+        const peerId = peerRef.id;
+        const st = peer.connectionState;
+        if (st === "failed" || st === "closed") {
+          void closePeer(peerId, false);
+        } else if (st === "disconnected") {
+          clearTimeout(disconnectTimers.get(peerId));
+          disconnectTimers.set(
+            peerId,
+            setTimeout(() => {
+              if (pcs.get(peerId)?.connectionState === "disconnected") void closePeer(peerId, false);
+            }, 5000),
+          );
+        } else if (st === "connected") {
+          clearTimeout(disconnectTimers.get(peerId));
+          hideRing();
+          stopRingAlert();
+          show("viewTalk");
+          startTimer();
+          setMediaHint("Terhubung");
+          updateTalkPeers();
+        }
+      };
+    }
+
+    async function getPc(peerId) {
+      let pc = pcs.get(peerId);
+      if (pc) return pc;
+      pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 });
+      const peerRef = { id: peerId };
+      pc.__nxRef = peerRef;
+      pcs.set(peerId, pc);
+      wirePc(peerRef, pc);
+      const media = await ensureMedia();
+      for (const track of media.getTracks()) pc.addTrack(track, media);
+      updateTalkPeers();
+      return pc;
+    }
+
+    async function flushIce(peerId) {
+      const pc = pcs.get(peerId);
+      if (!pc?.remoteDescription) return;
+      const q = iceQueues.get(peerId) || [];
+      iceQueues.set(peerId, []);
+      for (const c of q) {
+        try { await pc.addIceCandidate(c); } catch { /* */ }
+      }
+    }
+
+    async function addRemoteIce(peerId, candidate) {
+      if (!candidate || !peerId) return;
+      const pc = pcs.get(peerId);
+      if (!pc?.remoteDescription) {
+        const q = iceQueues.get(peerId) || [];
+        q.push(candidate);
+        iceQueues.set(peerId, q);
+        return;
+      }
+      try { await pc.addIceCandidate(candidate); } catch { /* */ }
+    }
+
+    async function closePeer(peerId, notify) {
+      const pc = pcs.get(peerId);
+      if (pc) {
+        try { pc.close(); } catch { /* */ }
+        pcs.delete(peerId);
+      }
+      iceQueues.delete(peerId);
+      makingOffer.delete(peerId);
+      ignoreOffer.delete(peerId);
+      removeTile(peerId);
+      clearTimeout(disconnectTimers.get(peerId));
+      disconnectTimers.delete(peerId);
+      if (notify && ws?.readyState === WebSocket.OPEN) {
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          to: peerId,
+          payload: { hangup: true, name: myName },
+        });
+      }
+      if (callActive && ![...pcs.keys()].filter((id) => id !== "broadcast").length) {
+        endCall(false);
+      }
+    }
+
+    async function ensureOfferTo(peerId, force) {
+      if (!peerId || peerId === sessionId || !callActive) return;
+      if (!force && String(sessionId) >= String(peerId)) return;
+      const pc = await getPc(peerId);
+      if (pc.signalingState !== "stable") return;
+      try {
+        makingOffer.set(peerId, true);
+        await pc.setLocalDescription(await pc.createOffer());
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "offer",
+          to: peerId,
+          payload: { sdp: pc.localDescription, name: myName },
+        });
+      } finally {
+        makingOffer.set(peerId, false);
+      }
+    }
+
+    async function meshOfferMissing() {
+      for (const id of roomPeerIds) {
+        if (!pcs.has(id)) await ensureOfferTo(id, false);
+      }
+    }
+
+    async function placeCall() {
+      callActive = true;
+      show("viewOutgoing");
+      $("outSub").textContent = "Memanggil grup…";
+      send({ type: "join", room: room() });
+      send({ type: "call.ring", room: room(), mode: "video", name: myName });
+      await ensureMedia();
+      await new Promise((r) => setTimeout(r, 350));
+      const list = roomPeerIds.slice();
+      if (!list.length) {
+        const fake = "broadcast";
+        const pc = await getPc(fake);
+        makingOffer.set(fake, true);
+        await pc.setLocalDescription(await pc.createOffer());
+        makingOffer.set(fake, false);
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "offer",
+          payload: { sdp: pc.localDescription, name: myName },
+        });
+        return;
+      }
+      for (const id of list) await ensureOfferTo(id, true);
+    }
+
+    async function acceptCall() {
+      if (!pendingOffer || !pendingFrom) return;
+      callActive = true;
+      stopRingAlert();
+      hideRing();
+      show("viewTalk");
+      setMediaHint("Membuka kamera…");
+      startTimer();
+      const peerId = pendingFrom;
+      const sdp = pendingOffer;
+      pendingOffer = null;
+      pendingFrom = null;
+      const pc = await getPc(peerId);
+      await pc.setRemoteDescription(sdp);
+      await flushIce(peerId);
+      await pc.setLocalDescription(await pc.createAnswer());
+      send({
+        type: "webrtc.signal",
+        room: room(),
+        signal: "answer",
+        to: peerId,
+        payload: { sdp: pc.localDescription, name: myName },
+      });
+      void meshOfferMissing();
+    }
+
+    function rejectCall() {
+      stopRingAlert();
+      hideRing();
+      pendingOffer = null;
+      pendingFrom = null;
+      endCall(true);
+      show("viewIdle");
+    }
+
+    function endCall(notifyPeer) {
+      callActive = false;
+      stopRingAlert();
+      hideRing();
+      stopTimer();
+      for (const t of disconnectTimers.values()) clearTimeout(t);
+      disconnectTimers.clear();
+      for (const id of [...pcs.keys()]) {
+        try { pcs.get(id)?.close(); } catch { /* */ }
+      }
+      pcs.clear();
+      iceQueues.clear();
+      makingOffer.clear();
+      ignoreOffer.clear();
+      for (const n of [...$("videoGrid").querySelectorAll(".tile")]) {
+        if (n.id !== "localTile") n.remove();
+      }
+      if (localStream) {
+        for (const t of localStream.getTracks()) t.stop();
+        localStream = null;
+      }
+      $("localVideo").srcObject = null;
+      micMuted = false;
+      camOff = false;
+      $("btnMute").textContent = "Mute mic";
+      $("btnCam").textContent = "Cam off";
+      pendingOffer = null;
+      pendingFrom = null;
+      updateTalkPeers();
+      if (notifyPeer && ws?.readyState === WebSocket.OPEN) {
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "ice",
+          payload: { hangup: true, name: myName },
+        });
+      }
+      if (ws?.readyState === WebSocket.OPEN) show("viewIdle");
+    }
+
+    async function onSignal(msg) {
+      if (msg.from && sessionId && msg.from === sessionId) return;
+      const data = msg.payload || {};
+      const from = msg.from || "broadcast";
+      if (data.hangup) {
+        if (from && from !== "broadcast") {
+          await closePeer(from, false);
+          return;
+        }
+        endCall(false);
+        return;
+      }
+      if (data.name && from) peerNames.set(from, data.name);
+
+      if (msg.signal === "offer") {
+        const sdp = data.sdp || data;
+        const who = data.name || "Teman";
+        const polite = String(sessionId) < String(from);
+        if (!callActive) {
+          pendingOffer = sdp;
+          pendingFrom = from;
+          $("inName").textContent = who;
+          show("viewIncoming");
+          showRing(who);
+          startRingAlert(who);
+          return;
+        }
+        const pc = await getPc(from);
+        const collision = makingOffer.get(from) || pc.signalingState !== "stable";
+        ignoreOffer.set(from, !polite && collision);
+        if (ignoreOffer.get(from)) return;
+        await pc.setRemoteDescription(sdp);
+        await flushIce(from);
+        await pc.setLocalDescription(await pc.createAnswer());
+        send({
+          type: "webrtc.signal",
+          room: room(),
+          signal: "answer",
+          to: from,
+          payload: { sdp: pc.localDescription, name: myName },
+        });
+        return;
+      }
+
+      if (msg.signal === "answer") {
+        let peerId = from;
+        if (!pcs.has(peerId) && pcs.has("broadcast")) peerId = "broadcast";
+        const pc = pcs.get(peerId);
+        if (!pc) return;
+        if (pc.signalingState !== "have-local-offer" && pc.remoteDescription) return;
+        await pc.setRemoteDescription(data.sdp || data);
+        await flushIce(peerId);
+        if (peerId === "broadcast" && from !== "broadcast") {
+          pcs.set(from, pc);
+          pcs.delete("broadcast");
+          if (pc.__nxRef) pc.__nxRef.id = from;
+          const q = iceQueues.get("broadcast");
+          if (q) {
+            iceQueues.set(from, q);
+            iceQueues.delete("broadcast");
+          }
+          const tile = document.getElementById("tile-broadcast");
+          if (tile) tile.id = "tile-" + from;
+          const vid = document.getElementById("vid-broadcast");
+          if (vid) vid.id = "vid-" + from;
+          const tag = document.getElementById("tag-broadcast");
+          if (tag) {
+            tag.id = "tag-" + from;
+            tag.textContent = peerNames.get(from) || from.slice(0, 6);
+          }
+        }
+        stopRingAlert();
+        hideRing();
+        show("viewTalk");
+        startTimer();
+        updateTalkPeers();
+        return;
+      }
+
+      if (msg.signal === "ice" && data.candidate) {
+        const peerId = pcs.has(from) ? from : pcs.has("broadcast") ? "broadcast" : from;
+        await addRemoteIce(peerId, data.candidate);
+      }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(base64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    }
+
+    async function registerWebPush(publicKey) {
+      if (!publicKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+      if (!window.isSecureContext) return;
+      try {
+        if (Notification.permission === "default") await Notification.requestPermission();
+        if (Notification.permission !== "granted") return;
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+        }
+        const json = sub.toJSON();
+        if (!json.endpoint || !json.keys) return;
+        send({
+          type: "push.subscribe",
+          subscription: json,
+          rooms: [room()],
+          page: "demo8",
+        });
+        const ice = $("iceLabel");
+        if (ice && !/Push/.test(ice.textContent || "")) ice.textContent += " · Push ON";
+      } catch (err) {
+        console.warn("[push]", err);
+      }
+    }
+
+    function applyProfileHint(msg) {
+      const q = new URLSearchParams(location.search);
+      if (msg.name && !q.get("name")) {
+        const cur = $("name").value.trim();
+        if (!cur || cur === "Aku") {
+          $("name").value = msg.name;
+          myName = msg.name;
+          if (ws?.readyState === WebSocket.OPEN) send({ type: "identify", name: myName });
+        }
+      }
+      if (msg.lastRoom && !q.get("room") && (!$("room").value.trim() || $("room").value === "grup-1")) {
+        $("room").value = msg.lastRoom;
+        if (ws?.readyState === WebSocket.OPEN) send({ type: "join", room: msg.lastRoom });
+      }
+    }
+
+    function connectWs() {
+      const token = $("token").value.trim();
+      if (!token) return;
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        try { ws.close(); } catch { /* */ }
+      }
+      const url = toWs(hostBase) + "?token=" + encodeURIComponent(token);
+      ws = new WebSocket(url);
+      $("netLabel").textContent = "…";
+      ws.onopen = () => {
+        $("netLabel").textContent = "Online";
+        reconnectAttempt = 0;
+      };
+      ws.onclose = () => {
+        if (intentionalClose) {
+          $("netLabel").textContent = "Offline";
+          endCall(false);
+          show("viewSetup");
+          return;
+        }
+        if (callActive) {
+          reconnectAttempt += 1;
+          $("netLabel").textContent = "Reconnect…";
+          reconnectTimer = setTimeout(connectWs, Math.min(8000, 800 * reconnectAttempt));
+          return;
+        }
+        $("netLabel").textContent = "Offline";
+        endCall(false);
+        show("viewSetup");
+      };
+      ws.onmessage = async (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          sessionId = msg.sessionId;
+          send({ type: "identify", name: myName });
+          send({ type: "join", room: room() });
+          if (!callActive) show("viewIdle");
+        } else if (msg.type === "profile.hint") {
+          applyProfileHint(msg);
+        } else if (msg.type === "ice.config") {
+          applyIceConfig(msg);
+        } else if (msg.type === "push.vapid") {
+          if (msg.enabled && msg.publicKey) void registerWebPush(msg.publicKey);
+        } else if (msg.type === "joined") {
+          roomPeerCount = msg.peers || 1;
+          roomPeerIds = Array.isArray(msg.peerIds) ? msg.peerIds.filter((id) => id !== sessionId) : [];
+          setPeerStatus(roomPeerCount);
+          if (callActive) void meshOfferMissing();
+        } else if (msg.type === "event" && msg.event === "room.peers") {
+          const d = msg.data || {};
+          roomPeerCount = d.peers != null ? d.peers : roomPeerCount;
+          if (Array.isArray(d.peerIds)) roomPeerIds = d.peerIds.filter((id) => id !== sessionId);
+          if (d.name && d.joined) peerNames.set(d.joined, d.name);
+          if (d.left) {
+            peerNames.delete(d.left);
+            void closePeer(d.left, false);
+          }
+          setPeerStatus(roomPeerCount);
+          if (callActive && d.joined && d.joined !== sessionId) void ensureOfferTo(d.joined, false);
+          updateTalkPeers();
+        } else if (msg.type === "call.incoming") {
+          if (callActive) return;
+          if (msg.from && msg.from === sessionId) return;
+          pendingFrom = msg.from;
+          $("inName").textContent = msg.name || "Teman";
+          show("viewIncoming");
+          showRing(msg.name || "Teman");
+          startRingAlert(msg.name || "Teman");
+        } else if (msg.type === "error") {
+          console.warn(msg);
+          if (msg.code === "no_peer") $("outSub").textContent = msg.message || "Tidak ada peer";
+        } else if (msg.type === "webrtc.signal") {
+          try { await onSignal(msg); } catch (e) {
+            console.error(e);
+            setMediaHint(e.message || "Signal gagal");
+          }
+        }
+      };
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) {
+        alert("Tempel token dulu");
+        return;
+      }
+      myName = $("name").value.trim() || "Aku";
+      intentionalClose = false;
+      reconnectAttempt = 0;
+      if (typeof Notification !== "undefined" && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+      connectWs();
+    };
+    $("btnCall").onclick = () => placeCall().catch((e) => {
+      alert(e.message || "Kamera/mic gagal — pakai HTTPS");
+      endCall(false);
+    });
+    $("btnCancel").onclick = () => endCall(true);
+    $("btnAccept").onclick = () => acceptCall().catch((e) => {
+      alert(e.message || "Gagal angkat");
+      endCall(false);
+    });
+    $("btnAcceptRing").onclick = () => $("btnAccept").click();
+    $("btnReject").onclick = () => rejectCall();
+    $("btnRejectRing").onclick = () => rejectCall();
+    $("btnHang").onclick = () => endCall(true);
+    $("btnMute").onclick = () => setMicMuted(!micMuted);
+    $("btnCam").onclick = () => setCamOff(!camOff);
+    $("btnFlip").onclick = () => void flipCamera();
+    $("btnInvite").onclick = async () => {
+      const link = inviteUrl();
+      try {
+        await navigator.clipboard.writeText(link);
+        setMediaHint("Undangan disalin");
+      } catch {
+        prompt("Salin undangan:", link);
+      }
+    };
+    $("btnLogout").onclick = () => {
+      intentionalClose = true;
+      clearTimeout(reconnectTimer);
+      endCall(false);
+      ws?.close();
+      show("viewSetup");
+    };
+
+    const q = new URLSearchParams(location.search);
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+    if (q.get("room")) $("room").value = q.get("room");
+    $("lanHint").textContent = `${location.origin}${location.pathname.replace(/\/?$/, "")}`;
+    if (!window.isSecureContext || location.protocol === "http:") {
+      $("secureWarn").style.display = "block";
+    }
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

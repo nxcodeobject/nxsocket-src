@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — OTP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1210;
+      --panel: #14201b;
+      --line: #24352d;
+      --text: #f2f7f4;
+      --muted: #8fa89b;
+      --accent: #2fbf71;
+      --danger: #d97878;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 0%, #1a3024 0%, transparent 55%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .card {
+      width: min(100%, 400px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 1.2rem;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      font: 0.75rem "IBM Plex Mono", monospace;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0 0 0.2rem; text-align: center; font-size: 1.35rem; }
+    .sub { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 0 0 1rem; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.4rem 0 0.15rem; }
+    input {
+      width: 100%;
+      background: #0b1210;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.6rem 0.7rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.95rem;
+      font: 650 0.86rem "DM Sans", system-ui, sans-serif;
+      cursor: pointer;
+      background: var(--accent);
+      color: #062418;
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .out {
+      margin-top: 0.85rem;
+      background: #0b1210;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem;
+      font: 0.72rem/1.45 "IBM Plex Mono", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 4.5rem;
+      color: var(--muted);
+    }
+    .out.ok { color: var(--accent); }
+    .out.err { color: var(--danger); }
+    .hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; margin: 0.75rem 0 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <a href="./qr">← QR</a>
+      <span>OTP</span>
+      <a href="./">API</a>
+    </div>
+    <h1>Verifikasi OTP</h1>
+    <p class="sub">Fondasi Remora register — SMS provider nanti</p>
+
+    <label for="phone">Nomor HP</label>
+    <input id="phone" placeholder="08xxxxxxxxxx" inputmode="tel" autocomplete="tel" />
+
+    <div class="actions">
+      <button type="button" id="btnRequest">Minta OTP</button>
+      <button type="button" class="ghost" id="btnStatus">Cek status</button>
+    </div>
+
+    <label for="code">Kode OTP (6 digit)</label>
+    <input id="code" placeholder="******" inputmode="numeric" maxlength="6" />
+
+    <div class="actions">
+      <button type="button" id="btnVerify">Verifikasi</button>
+    </div>
+
+    <pre class="out" id="out">Siap.</pre>
+    <p class="hint">Mode dev: respons request berisi <code>debugCode</code>. Remora nanti: POST <code>/v1/otp/request</code> &amp; <code>/v1/otp/verify</code>.</p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const apiBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/otp\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    function show(obj, ok) {
+      $("out").className = "out " + (ok === true ? "ok" : ok === false ? "err" : "");
+      $("out").textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+    }
+
+    async function post(path, body) {
+      const res = await fetch(apiBase + path, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      return { res, json };
+    }
+
+    $("btnRequest").onclick = async () => {
+      try {
+        const { res, json } = await post("/otp/request", { phone: $("phone").value });
+        show(json, res.ok);
+        if (json.debugCode) $("code").value = json.debugCode;
+      } catch (e) {
+        show(e.message || String(e), false);
+      }
+    };
+
+    $("btnVerify").onclick = async () => {
+      try {
+        const { res, json } = await post("/otp/verify", {
+          phone: $("phone").value,
+          code: $("code").value,
+        });
+        show(json, res.ok);
+      } catch (e) {
+        show(e.message || String(e), false);
+      }
+    };
+
+    $("btnStatus").onclick = async () => {
+      try {
+        const phone = encodeURIComponent($("phone").value.trim());
+        const res = await fetch(apiBase + "/otp/status?phone=" + phone, { cache: "no-store" });
+        const json = await res.json();
+        show(json, res.ok && json.verified);
+      } catch (e) {
+        show(e.message || String(e), false);
+      }
+    };
+  </script>
+</body>
+</html>

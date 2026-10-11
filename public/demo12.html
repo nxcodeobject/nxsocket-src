@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — Groups & DM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e1410;
+      --panel: #152019;
+      --line: #2a3a30;
+      --text: #e8f0ea;
+      --muted: #8fa898;
+      --accent: #3ecf8e;
+      --accent2: #2a9d6a;
+      --soft: #1a2820;
+      --bubble-me: #1e4a35;
+      --bubble-them: #243028;
+      --danger: #d97878;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 60% 40% at 10% 0%, #1a3024 0%, transparent 55%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 440px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1rem;
+      min-height: 620px;
+      max-height: min(94vh, 880px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.45rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 { margin: 0 0 0.1rem; font-size: 1.35rem; text-align: center; }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 0 0 0.6rem;
+      min-height: 1.1em;
+    }
+    .sub.live { color: var(--accent); }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.35rem 0 0.15rem; }
+    input {
+      width: 100%;
+      background: #0e1410;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.55rem 0.65rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    .hint { color: var(--muted); font-size: 0.76rem; line-height: 1.4; margin: 0.35rem 0 0; }
+    .actions { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-top: 0.5rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.5rem 0.85rem;
+      font: 650 0.84rem "DM Sans", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .btn-go { background: var(--accent); color: #062418; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    .btn-soft { background: var(--soft); color: var(--text); border: 1px solid var(--line); font-size: 0.76rem; padding: 0.35rem 0.65rem; }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid #5a3030; font-size: 0.76rem; padding: 0.35rem 0.65rem; }
+    #viewApp {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.3rem;
+    }
+    .tabs button {
+      flex: 1;
+      border-radius: 10px;
+      background: var(--soft);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .tabs button.on {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .panel {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .row-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.55rem 0.65rem;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      color: inherit;
+      font: inherit;
+    }
+    .row-item:hover { border-color: var(--accent2); }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #214033;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .row-meta { flex: 1; min-width: 0; }
+    .row-meta strong { display: block; font-size: 0.9rem; }
+    .row-meta span { color: var(--muted); font-size: 0.72rem; }
+    .badge {
+      font: 500 0.65rem "IBM Plex Mono", monospace;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 0.1rem 0.4rem;
+    }
+    #chatView {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .chat-head {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .chat-head .title { flex: 1; min-width: 0; }
+    .chat-head .title strong { display: block; font-size: 0.95rem; }
+    .chat-head .title span { color: var(--muted); font-size: 0.7rem; }
+    #messages {
+      flex: 1;
+      min-height: 120px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.35rem 0.15rem;
+    }
+    .bubble {
+      max-width: 85%;
+      padding: 0.45rem 0.65rem;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.me { align-self: flex-end; background: var(--bubble-me); }
+    .bubble.them { align-self: flex-start; background: var(--bubble-them); }
+    .bubble .who {
+      font-size: 0.68rem;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+      font-weight: 600;
+    }
+    .bubble .ts {
+      display: block;
+      text-align: right;
+      font-size: 0.62rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .composer {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+    }
+    .composer input { flex: 1; border-radius: 999px; }
+    .members {
+      font-size: 0.72rem;
+      color: var(--muted);
+      max-height: 72px;
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.85rem;
+      margin: 1.2rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo11">← Feed</a>
+      <span id="netLabel">Offline</span>
+      <a href="./demo">Chat →</a>
+    </div>
+    <h1>Groups & DM</h1>
+    <p class="sub" id="modeLabel">Grup bernama · invite · DM</p>
+
+    <div id="viewSetup">
+      <label for="token">Gateway token</label>
+      <input id="token" autocomplete="off" placeholder="Tempel token dari server" />
+      <label for="name">Nama</label>
+      <input id="name" value="A1" maxlength="24" />
+      <p class="hint">Buat grup → bagikan kode invite. Atau DM ke peer yang Online.</p>
+      <div class="actions">
+        <button class="btn-go" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div id="viewApp" class="hidden">
+      <div id="homeView" class="panel">
+        <div class="tabs">
+          <button type="button" class="on" id="tabGroups">Grup</button>
+          <button type="button" id="tabDm">DM / Online</button>
+        </div>
+
+        <div id="paneGroups">
+          <div class="actions" style="margin-top:0;">
+            <button class="btn-go" type="button" id="btnCreate">Buat grup</button>
+            <button class="btn-soft" type="button" id="btnJoin">Join kode</button>
+          </div>
+          <div class="list" id="groupList"><p class="empty">Belum ada grup</p></div>
+        </div>
+
+        <div id="paneDm" class="hidden">
+          <p class="hint" style="margin:0 0 0.35rem;">Ketuk peer Online untuk DM.</p>
+          <div class="list" id="peerList"><p class="empty">Tidak ada peer online</p></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-ghost" type="button" id="btnLeave">Keluar</button>
+        </div>
+      </div>
+
+      <div id="chatView" class="hidden">
+        <div class="chat-head">
+          <button class="btn-soft" type="button" id="btnBack">←</button>
+          <div class="title">
+            <strong id="chatTitle">Chat</strong>
+            <span id="chatSub"></span>
+          </div>
+          <button class="btn-danger hidden" type="button" id="btnLeaveGroup">Leave</button>
+        </div>
+        <div class="members hidden" id="memberBox"></div>
+        <div id="messages"></div>
+        <div class="composer">
+          <input id="chatText" maxlength="2000" placeholder="Tulis pesan…" autocomplete="off" />
+          <button class="btn-go" type="button" id="btnSend">Kirim</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo12\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+
+    let ws = null;
+    let myName = "A1";
+    let mySessionId = "";
+    let myMemberKey = "";
+    /** @type {Map<string, any>} */
+    let groups = new Map();
+    /** @type {Map<string, any>} */
+    let presence = new Map();
+    /** @type {{ kind: 'group'|'dm', id: string, room: string, title: string, group?: any } | null} */
+    let active = null;
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      $("viewApp").classList.toggle("hidden", on);
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMode(t, live) {
+      $("modeLabel").textContent = t;
+      $("modeLabel").className = "sub" + (live ? " live" : "");
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function fmtTime(iso) {
+      try {
+        return new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      } catch {
+        return "";
+      }
+    }
+
+    function initial(name) {
+      return (name || "?").trim().slice(0, 1).toUpperCase();
+    }
+
+    function showHome() {
+      active = null;
+      $("homeView").classList.remove("hidden");
+      $("chatView").classList.add("hidden");
+      renderGroups();
+      renderPeers();
+    }
+
+    function openChat(ctx) {
+      active = ctx;
+      $("homeView").classList.add("hidden");
+      $("chatView").classList.remove("hidden");
+      $("chatTitle").textContent = ctx.title;
+      $("messages").innerHTML = "";
+      if (ctx.kind === "group" && ctx.group) {
+        $("chatSub").textContent = "kode " + ctx.group.code + " · " + ctx.group.members.length + " anggota";
+        $("btnLeaveGroup").classList.remove("hidden");
+        $("memberBox").classList.remove("hidden");
+        renderMembers(ctx.group);
+      } else {
+        $("chatSub").textContent = "Direct message";
+        $("btnLeaveGroup").classList.add("hidden");
+        $("memberBox").classList.add("hidden");
+      }
+      send({ type: "chat.getHistory", room: ctx.room, limit: 80 });
+    }
+
+    function renderMembers(g) {
+      const mine = myMemberKey;
+      $("memberBox").innerHTML = (g.members || [])
+        .map((m) => {
+          const owner = m.key === g.ownerKey ? " · owner" : "";
+          const kick =
+            g.ownerKey === mine && m.key !== mine
+              ? ` <button class="btn-danger" type="button" data-kick="${esc(m.key)}">kick</button>`
+              : "";
+          return `<div>${esc(m.name)}${owner}${kick}</div>`;
+        })
+        .join("");
+      $("memberBox").querySelectorAll("[data-kick]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!confirm("Kick anggota ini?")) return;
+          send({ type: "group.kick", groupId: g.id, memberKey: btn.getAttribute("data-kick") });
+        });
+      });
+    }
+
+    function renderGroups() {
+      const list = [...groups.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      if (!list.length) {
+        $("groupList").innerHTML = '<p class="empty">Belum ada grup — buat atau join kode</p>';
+        return;
+      }
+      $("groupList").innerHTML = list
+        .map(
+          (g) => `
+        <button type="button" class="row-item" data-gid="${esc(g.id)}">
+          <div class="avatar">${esc(initial(g.name))}</div>
+          <div class="row-meta">
+            <strong>${esc(g.name)}</strong>
+            <span>${g.members.length} anggota · kode ${esc(g.code)}</span>
+          </div>
+          ${g.ownerKey === myMemberKey ? '<span class="badge">owner</span>' : ""}
+        </button>`,
+        )
+        .join("");
+      $("groupList").querySelectorAll("[data-gid]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const g = groups.get(btn.getAttribute("data-gid"));
+          if (!g) return;
+          openChat({ kind: "group", id: g.id, room: g.room, title: g.name, group: g });
+        });
+      });
+    }
+
+    function renderPeers() {
+      const peers = [...presence.values()].filter(
+        (u) => u.status !== "offline" && u.userId !== mySessionId,
+      );
+      if (!peers.length) {
+        $("peerList").innerHTML = '<p class="empty">Tidak ada peer online</p>';
+        return;
+      }
+      $("peerList").innerHTML = peers
+        .map(
+          (u) => `
+        <button type="button" class="row-item" data-peer="${esc(u.name || u.userId)}">
+          <div class="avatar">${esc(initial(u.name))}</div>
+          <div class="row-meta">
+            <strong>${esc(u.name || "?")}</strong>
+            <span>Online · ketuk untuk DM</span>
+          </div>
+        </button>`,
+        )
+        .join("");
+      $("peerList").querySelectorAll("[data-peer]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          send({ type: "group.dm", peerName: btn.getAttribute("data-peer") });
+        });
+      });
+    }
+
+    function appendMsg(m) {
+      if (!active || m.room !== active.room) return;
+      if (m.to && active.kind !== "dm") return;
+      const mine = m.from === mySessionId;
+      const el = document.createElement("div");
+      el.className = "bubble " + (mine ? "me" : "them");
+      el.innerHTML =
+        (mine ? "" : `<div class="who">${esc(m.name || "?")}</div>`) +
+        esc(m.text) +
+        `<span class="ts">${esc(fmtTime(m.ts))}</span>`;
+      $("messages").appendChild(el);
+      $("messages").scrollTop = $("messages").scrollHeight;
+    }
+
+    function upsertGroup(g) {
+      groups.set(g.id, g);
+      if (active?.kind === "group" && active.id === g.id) {
+        active.group = g;
+        $("chatSub").textContent = "kode " + g.code + " · " + g.members.length + " anggota";
+        renderMembers(g);
+      }
+      renderGroups();
+    }
+
+    $("tabGroups").onclick = () => {
+      $("tabGroups").classList.add("on");
+      $("tabDm").classList.remove("on");
+      $("paneGroups").classList.remove("hidden");
+      $("paneDm").classList.add("hidden");
+    };
+    $("tabDm").onclick = () => {
+      $("tabDm").classList.add("on");
+      $("tabGroups").classList.remove("on");
+      $("paneDm").classList.remove("hidden");
+      $("paneGroups").classList.add("hidden");
+      renderPeers();
+    };
+
+    $("btnCreate").onclick = () => {
+      const name = prompt("Nama grup:", "Tim Nx");
+      if (!name || !name.trim()) return;
+      send({ type: "group.create", name: name.trim() });
+    };
+    $("btnJoin").onclick = () => {
+      const code = prompt("Kode invite grup:", "");
+      if (!code || !code.trim()) return;
+      send({ type: "group.join", code: code.trim() });
+    };
+    $("btnBack").onclick = () => showHome();
+    $("btnLeaveGroup").onclick = () => {
+      if (!active || active.kind !== "group") return;
+      if (!confirm("Keluar dari grup ini?")) return;
+      send({ type: "group.leave", groupId: active.id });
+      showHome();
+    };
+
+    $("btnSend").onclick = () => {
+      const text = $("chatText").value.trim();
+      if (!text || !active) return;
+      send({ type: "chat.send", room: active.room, text });
+      $("chatText").value = "";
+    };
+    $("chatText").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") $("btnSend").click();
+    });
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) { alert("Tempel token dulu"); return; }
+      myName = $("name").value.trim() || "A1";
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      ws.onopen = () => { $("netLabel").textContent = "Online"; };
+      ws.onclose = () => {
+        $("netLabel").textContent = "Offline";
+        setMode("Terputus", false);
+        showSetup(true);
+      };
+      ws.onerror = () => alert("Gagal terhubung");
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          mySessionId = msg.sessionId || "";
+          send({ type: "identify", name: myName });
+          groups = new Map();
+          presence = new Map();
+          showSetup(false);
+          showHome();
+          setMode("Online · " + myName, true);
+        } else if (msg.type === "identified") {
+          myMemberKey = ""; // diisi dari sync/list lewat perbandingan nama di UI owner badge via list
+          send({ type: "group.sync" });
+          send({ type: "presence.subscribe", scope: "global" });
+        } else if (msg.type === "group.list") {
+          groups = new Map();
+          for (const g of msg.groups || []) {
+            groups.set(g.id, g);
+            // tebak memberKey dari anggota yang namanya sama
+            const me = (g.members || []).find(
+              (m) => (m.name || "").toLowerCase() === myName.toLowerCase(),
+            );
+            if (me) myMemberKey = me.key;
+          }
+          renderGroups();
+        } else if (msg.type === "group.created" || msg.type === "group.joined") {
+          upsertGroup(msg.group);
+          const me = (msg.group.members || []).find(
+            (m) => (m.name || "").toLowerCase() === myName.toLowerCase(),
+          );
+          if (me) myMemberKey = me.key;
+          openChat({
+            kind: "group",
+            id: msg.group.id,
+            room: msg.group.room,
+            title: msg.group.name,
+            group: msg.group,
+          });
+        } else if (msg.type === "group.updated") {
+          upsertGroup(msg.group);
+        } else if (msg.type === "group.kicked") {
+          groups.delete(msg.groupId);
+          showToastSafe("Dikick dari " + (msg.name || "grup"));
+          showHome();
+        } else if (msg.type === "group.dm") {
+          openChat({ kind: "dm", id: msg.room, room: msg.room, title: msg.peerName });
+        } else if (msg.type === "presence.snapshot") {
+          presence = new Map();
+          for (const u of msg.users || []) presence.set(u.userId, u);
+          renderPeers();
+        } else if (msg.type === "presence.update") {
+          if (!msg.user) return;
+          if (msg.user.status === "offline") presence.delete(msg.user.userId);
+          else presence.set(msg.user.userId, msg.user);
+          renderPeers();
+        } else if (msg.type === "chat.history") {
+          if (!active || msg.room !== active.room) return;
+          $("messages").innerHTML = "";
+          for (const m of msg.messages || []) appendMsg(m);
+        } else if (msg.type === "chat.message") {
+          appendMsg(msg);
+        } else if (msg.type === "error") {
+          alert(msg.message || msg.code || "Error");
+        }
+      };
+    };
+
+    function showToastSafe(t) {
+      setMode(t, true);
+      setTimeout(() => setMode("Online · " + myName, true), 2500);
+    }
+
+    $("btnLeave").onclick = () => {
+      if (ws) ws.close();
+      ws = null;
+      showSetup(true);
+      setMode("Grup bernama · invite · DM", false);
+    };
+
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get("token")) $("token").value = q.get("token");
+      if (q.get("name")) $("name").value = q.get("name");
+    } catch {}
+  </script>
+</body>
+</html>

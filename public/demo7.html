@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>NxSocket — Ops (Progress / Job / Sync)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #14110e;
+      --panel: #1c1814;
+      --line: #3a322a;
+      --text: #f3ebe1;
+      --muted: #a89886;
+      --ok: #6bbf8a;
+      --accent: #c47b4a;
+      --blue: #6a9cc9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 0%, #3a2a1c 0%, transparent 50%),
+        radial-gradient(ellipse 50% 35% at 90% 100%, #1a2830 0%, transparent 45%),
+        var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+    }
+    .phone {
+      width: min(100%, 460px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 1.15rem;
+      min-height: 600px;
+      max-height: min(94vh, 800px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-bottom: 0.55rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .top a { color: var(--muted); text-decoration: none; }
+    h1 {
+      margin: 0 0 0.15rem;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.45rem;
+      text-align: center;
+    }
+    .sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin: 0 0 0.7rem;
+      min-height: 1.1em;
+    }
+    .sub.live { color: var(--ok); }
+    .hidden { display: none !important; }
+    label { display: block; font-size: 0.72rem; color: var(--muted); margin: 0.35rem 0 0.15rem; }
+    input {
+      width: 100%;
+      background: #120f0c;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 0.55rem 0.65rem;
+      font: inherit;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    .hint { color: var(--muted); font-size: 0.78rem; line-height: 1.4; margin: 0.35rem 0 0; }
+    .actions { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-top: 0.55rem; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.55rem 0.95rem;
+      font: 600 0.88rem "Source Sans 3", system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .btn-go { background: var(--accent); color: #1a1008; }
+    .btn-ok { background: var(--ok); color: #0a1a10; }
+    .btn-blue { background: var(--blue); color: #0a1520; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+    #viewApp {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0.7rem 0.75rem;
+      background: #15120f;
+    }
+    .panel h2 {
+      margin: 0 0 0.45rem;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .bar {
+      height: 12px;
+      background: #0e0c0a;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .bar > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #e0a35a);
+      border-radius: 999px;
+      transition: width 0.15s linear;
+    }
+    .meta {
+      font: 500 0.72rem/1.4 "IBM Plex Mono", monospace;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+    .row { display: flex; gap: 0.4rem; margin-top: 0.45rem; }
+    .row input { flex: 1; font-size: 0.85rem; }
+    .board {
+      margin-top: 0.4rem;
+      font: 400 0.75rem/1.45 "IBM Plex Mono", monospace;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top">
+      <a href="./demo6">← Track</a>
+      <span id="netLabel">Offline</span>
+      <a href="./demo">Chat →</a>
+    </div>
+    <h1>Ops Board</h1>
+    <p class="sub" id="modeLabel">Progress · Job · Sync</p>
+
+    <div id="viewSetup">
+      <label for="token">Gateway token</label>
+      <input id="token" autocomplete="off" placeholder="Tempel token dari server" />
+      <label for="name">Nama</label>
+      <input id="name" value="Ops" maxlength="24" />
+      <p class="hint">Buka 2 tab: satu jalankan progress/job, satu pantau + edit sync board.</p>
+      <div class="actions">
+        <button class="btn-go" id="btnReady" type="button">Masuk</button>
+      </div>
+    </div>
+
+    <div id="viewApp" class="hidden">
+      <section class="panel">
+        <h2>Progress</h2>
+        <div class="bar"><i id="progBar"></i></div>
+        <p class="meta" id="progMeta">id: upload-1 — belum ada</p>
+        <div class="actions" style="margin-top:0.45rem;">
+          <button class="btn-go" id="btnProg" type="button">Simulate upload</button>
+          <button class="btn-ghost" id="btnProgDone" type="button">Mark done</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Job</h2>
+        <p class="meta" id="jobMeta">belum ada job</p>
+        <div class="bar"><i id="jobBar"></i></div>
+        <div class="actions" style="margin-top:0.45rem;">
+          <button class="btn-ok" id="btnJob" type="button">Run demo job</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Sync board</h2>
+        <p class="meta">channel: board-1</p>
+        <div class="board" id="board">(kosong)</div>
+        <div class="row">
+          <input id="syncKey" placeholder="key" value="status" />
+          <input id="syncVal" placeholder="value" value="ready" />
+        </div>
+        <div class="actions">
+          <button class="btn-blue" id="btnSyncSet" type="button">Set</button>
+          <button class="btn-ghost" id="btnSyncDel" type="button">Delete</button>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="btn-ghost" id="btnLogout" type="button">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const hostBase = `${location.protocol}//${location.host}${location.pathname.replace(/\/demo7\/?$/, "") || "/v1"}`.replace(/\/$/, "");
+    const PROGRESS_ID = "upload-1";
+    const SYNC_CH = "board-1";
+
+    let ws = null;
+    let jobId = null;
+    let syncData = {};
+    let progTimer = null;
+
+    function showSetup(on) {
+      $("viewSetup").classList.toggle("hidden", !on);
+      $("viewApp").classList.toggle("hidden", on);
+    }
+
+    function toWs(base) {
+      const u = new URL(base);
+      u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+      u.pathname = u.pathname.replace(/\/+$/, "") + "/ws";
+      u.search = "";
+      return u.toString();
+    }
+
+    function send(msg) {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    }
+
+    function setMode(t, live) {
+      $("modeLabel").textContent = t;
+      $("modeLabel").className = "sub" + (live ? " live" : "");
+    }
+
+    function renderBoard() {
+      const keys = Object.keys(syncData).sort();
+      if (!keys.length) {
+        $("board").textContent = "(kosong)";
+        return;
+      }
+      $("board").textContent = keys
+        .map((k) => k + " = " + JSON.stringify(syncData[k]))
+        .join("\n");
+    }
+
+    function setProg(percent, note) {
+      $("progBar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+      $("progMeta").textContent = "id: " + PROGRESS_ID + " — " + (note || percent + "%");
+    }
+
+    function setJob(progress, note) {
+      $("jobBar").style.width = Math.max(0, Math.min(100, progress || 0)) + "%";
+      $("jobMeta").textContent = note || "job…";
+    }
+
+    $("btnReady").onclick = () => {
+      const token = $("token").value.trim();
+      if (!token) { alert("Tempel token dulu"); return; }
+      const name = $("name").value.trim() || "Ops";
+      ws = new WebSocket(toWs(hostBase) + "?token=" + encodeURIComponent(token));
+      ws.onopen = () => { $("netLabel").textContent = "Online"; };
+      ws.onclose = () => {
+        $("netLabel").textContent = "Offline";
+        if (progTimer) clearInterval(progTimer);
+        showSetup(true);
+      };
+      ws.onerror = () => alert("Gagal terhubung");
+      ws.onmessage = (ev) => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === "welcome") {
+          send({ type: "identify", name });
+          showSetup(false);
+          syncData = {};
+          renderBoard();
+          setProg(0, "subscribed");
+          setJob(0, "siap");
+          send({ type: "progress.subscribe", id: PROGRESS_ID });
+          send({ type: "sync.subscribe", channel: SYNC_CH });
+          setMode("Online — 3 modul aktif", true);
+        } else if (msg.type === "progress.snapshot") {
+          if (msg.current) setProg(msg.current.percent, msg.current.done ? "done" : msg.current.percent + "%");
+        } else if (msg.type === "progress.update") {
+          setProg(msg.percent, msg.percent + "%");
+        } else if (msg.type === "progress.done") {
+          setProg(msg.ok ? 100 : 0, msg.ok ? "done OK" : "done FAIL");
+        } else if (msg.type === "job.snapshot") {
+          if (msg.job) setJob(msg.job.progress, msg.job.name + " · " + msg.job.status + " " + msg.job.progress + "%");
+        } else if (msg.type === "job.update") {
+          setJob(msg.progress, (msg.name || "job") + " · " + msg.status + " " + msg.progress + "%");
+          if (msg.status === "done" || msg.status === "failed") setMode("Job " + msg.status, true);
+        } else if (msg.type === "sync.snapshot") {
+          syncData = msg.data || {};
+          renderBoard();
+        } else if (msg.type === "sync.update") {
+          syncData[msg.key] = msg.value;
+          renderBoard();
+        } else if (msg.type === "sync.delete") {
+          delete syncData[msg.key];
+          renderBoard();
+        } else if (msg.type === "error") {
+          alert(msg.message || msg.code);
+        }
+      };
+    };
+
+    $("btnProg").onclick = () => {
+      if (progTimer) clearInterval(progTimer);
+      let p = 0;
+      send({ type: "progress.update", id: PROGRESS_ID, percent: 0, meta: { file: "demo.bin" } });
+      progTimer = setInterval(() => {
+        p += 8;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(progTimer);
+          progTimer = null;
+          send({ type: "progress.update", id: PROGRESS_ID, percent: 100 });
+          send({ type: "progress.done", id: PROGRESS_ID, ok: true, meta: { file: "demo.bin" } });
+          return;
+        }
+        send({
+          type: "progress.update",
+          id: PROGRESS_ID,
+          percent: p,
+          loaded: p,
+          total: 100,
+          meta: { file: "demo.bin" },
+        });
+      }, 180);
+    };
+
+    $("btnProgDone").onclick = () => {
+      send({ type: "progress.done", id: PROGRESS_ID, ok: true });
+    };
+
+    $("btnJob").onclick = () => {
+      jobId = crypto.randomUUID();
+      send({ type: "job.subscribe", jobId });
+      send({ type: "job.run", name: "demo-export", jobId, steps: 8 });
+      setJob(0, "demo-export · starting…");
+    };
+
+    $("btnSyncSet").onclick = () => {
+      const key = $("syncKey").value.trim();
+      const raw = $("syncVal").value;
+      if (!key) { alert("Isi key"); return; }
+      let value = raw;
+      try { value = JSON.parse(raw); } catch { /* string */ }
+      send({ type: "sync.set", channel: SYNC_CH, key, value });
+    };
+
+    $("btnSyncDel").onclick = () => {
+      const key = $("syncKey").value.trim();
+      if (!key) return;
+      send({ type: "sync.delete", channel: SYNC_CH, key });
+    };
+
+    $("btnLogout").onclick = () => {
+      if (progTimer) clearInterval(progTimer);
+      ws?.close();
+      showSetup(true);
+    };
+
+    const q = new URLSearchParams(location.search);
+    if (q.get("token")) $("token").value = q.get("token");
+    if (q.get("name")) $("name").value = q.get("name");
+  </script>
+</body>
+</html>
