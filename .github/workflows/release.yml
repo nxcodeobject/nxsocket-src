@@ -1,0 +1,47 @@
+name: release
+
+# Build standalone binaries when a version tag is pushed and attach them to the
+# matching GitHub Release. Tag-driven so the published artifacts always match an
+# auditable tag, instead of relying on someone building and uploading by hand.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME}"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "Tag $TAG does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Build standalone binaries (Windows + Linux)
+        run: npm run build:bin
+
+      - name: Attach binaries to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/nxsocket-win-x64.exe
+            release/nxsocket-linux-x64
+          fail_on_unmatched_files: true
