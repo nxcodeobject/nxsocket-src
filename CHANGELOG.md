@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-15
 
 ### Added
 - Group video call mesh (demo8), meeting mesh (demo9), SFU meeting via LiveKit (demo10)

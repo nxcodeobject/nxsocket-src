@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-function readVersion(): string {
+export function readVersion(): string {
   try {
     const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as {
       version?: string;

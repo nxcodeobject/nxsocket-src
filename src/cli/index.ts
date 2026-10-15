@@ -7,7 +7,7 @@ import { formatGatewayEndpoints } from "../shared/net.js";
 import { printNetworkUrlQr, printTokenQr } from "../shared/qr.js";
 import type { AdapterKind } from "../shared/types.js";
 import { startServer } from "../server/index.js";
-import { printNxsocketBanner } from "./banner.js";
+import { printNxsocketBanner, readVersion } from "./banner.js";
 
 printNxsocketBanner();
 
@@ -16,7 +16,7 @@ const program = new Command();
 program
   .name("nxsocket")
   .description("CLI untuk menjalankan NxSocket Server & mengelola gateway token")
-  .version("0.2.0");
+  .version(readVersion());
 
 program
   .command("server")

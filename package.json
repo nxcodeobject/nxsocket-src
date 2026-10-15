@@ -1,6 +1,6 @@
 {
   "name": "nxsocket",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CLI and WebSocket platform for realtime features",
   "type": "module",
   "bin": {

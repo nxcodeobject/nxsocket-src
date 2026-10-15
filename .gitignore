@@ -16,3 +16,4 @@ Thumbs.db
 tools/cloudflared/*.exe
 tools/livekit/*.exe
 tools/livekit/*.zip
+AGENTS.md
